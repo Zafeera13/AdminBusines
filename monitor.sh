@@ -1,7 +1,7 @@
 #!/bin/bash
-# Script untuk menjalankan Ngrok dengan Python untuk akses jarak jauh
+# Script untuk memonitor aplikasi CusAkuntanID
 
-echo "==== Menjalankan Ngrok dengan Python ====="
+echo "==== Monitor Status CusAkuntanID ====="
 
 # Memeriksa apakah Python tersedia
 command -v python3 >/dev/null 2>&1 || { 
@@ -17,17 +17,14 @@ command -v python3 >/dev/null 2>&1 || {
 }
 
 # Memeriksa apakah script Python tersedia
-if [ ! -f "./run_ngrok.py" ]; then
-    echo "ERROR: File run_ngrok.py tidak ditemukan."
-    echo "Silakan download ulang script atau buat file dengan nama run_ngrok.py"
+if [ ! -f "./monitor_app.py" ]; then
+    echo "ERROR: File monitor_app.py tidak ditemukan."
+    echo "Silakan download ulang script atau buat file dengan nama monitor_app.py"
     exit 1
 fi
 
 # Memastikan script Python dapat dieksekusi
-chmod +x run_ngrok.py
-
-# Menentukan port
-PORT=${1:-5000}
+chmod +x monitor_app.py
 
 # Aktifkan virtualenv jika ada
 if [ -d "venv" ]; then
@@ -36,5 +33,5 @@ if [ -d "venv" ]; then
 fi
 
 # Jalankan script Python
-echo "Menjalankan script Python untuk Ngrok..."
-$PYTHON_CMD run_ngrok.py $PORT
+echo "Menjalankan monitoring..."
+$PYTHON_CMD monitor_app.py

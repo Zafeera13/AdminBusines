@@ -130,16 +130,26 @@ Script ini akan:
 
 ## 6. Akses Jarak Jauh
 
-### 6.1 Menjalankan Ngrok
+### 6.1 Menjalankan Ngrok dengan Antarmuka Python
 Buka terminal Termux baru (geser dari kiri untuk menu, pilih "New Session"), kemudian:
 ```bash
 cd ~/storage/shared/CusAkuntanID
 ./run_ngrok.sh
 ```
 
+Script Python akan:
+- Memeriksa instalasi Ngrok
+- Memverifikasi konfigurasi token (dan meminta jika belum dikonfigurasi)
+- Menjalankan Ngrok dengan monitoring otomatis
+- Menampilkan URL dengan warna hijau untuk memudahkan penyalinan
+- Memperbarui informasi status koneksi secara berkala
+- Menyediakan pesan error yang jelas jika terjadi masalah
+
 ### 6.2 Mengakses Aplikasi dari Jarak Jauh
-1. Salin URL HTTPS yang diberikan oleh Ngrok (misal: `https://a1b2c3d4.ngrok.io`)
-2. Gunakan URL ini untuk mengakses aplikasi dari perangkat manapun dengan koneksi internet
+1. Perhatikan bagian "URL AKSES JARAK JAUH" yang ditampilkan dengan warna hijau oleh script
+2. Salin URL HTTPS yang diberikan (misalnya: `https://a1b2c3d4.ngrok.io`)
+3. Gunakan URL ini untuk mengakses aplikasi dari perangkat manapun dengan koneksi internet
+4. Script akan terus memonitor koneksi dan memperbarui informasi setiap 30 detik
 
 **Catatan Penting**:
 - URL Ngrok gratis akan berubah setiap kali Anda me-restart Ngrok
@@ -173,6 +183,12 @@ git pull
 - Periksa apakah token autentikasi sudah dikonfigurasi
 - Pastikan server aplikasi sudah berjalan terlebih dahulu
 - Coba konfigurasi ulang token: `./ngrok config add-authtoken YOUR_TOKEN`
+
+#### Error pada script Python Ngrok
+- **"Error mendapatkan informasi tunnel"**: Pastikan Ngrok berjalan dengan benar. Tunggu beberapa saat dan script akan terus mencoba
+- **"Module not found"**: Pastikan setup_termux.sh telah dijalankan untuk menginstall semua modul Python yang dibutuhkan
+- **"Token belum dikonfigurasi"**: Ikuti petunjuk untuk mengkonfigurasi token saat diminta. Anda juga bisa mengkonfigurasinya secara manual
+- **Warna tidak tampil**: Beberapa terminal Termux mungkin tidak mendukung tampilan warna. Tetap gunakan URL yang diberikan
 
 #### Error "Address already in use"
 - Ada aplikasi lain yang menggunakan port 5000
