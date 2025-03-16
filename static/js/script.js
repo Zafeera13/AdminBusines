@@ -119,19 +119,54 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // Function to update invoice status via API
 function updateTagihanStatus(tagihanId, status) {
-    return fetch(`/api/set-status/${tagihanId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: status }),
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    });
+    if (confirm('Apakah Anda yakin ingin mengubah status tagihan ini?')) {
+        fetch(`/api/set-status/${tagihanId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: status }),
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Tampilkan pesan sukses
+                const flashContainer = document.getElementById('flash-messages');
+                if (flashContainer) {
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                    alertDiv.role = 'alert';
+                    alertDiv.innerHTML = `
+                        ${data.message} 
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    `;
+                    flashContainer.appendChild(alertDiv);
+                    
+                    // Auto dismiss after 5 seconds
+                    setTimeout(() => {
+                        const alert = new bootstrap.Alert(alertDiv);
+                        alert.close();
+                    }, 5000);
+                }
+                
+                // Refresh halaman untuk memperbarui tampilan
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                alert('Gagal mengubah status tagihan: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error updating invoice status:', error);
+            alert('Terjadi kesalahan saat mengubah status tagihan');
+        });
+    }
 }
 
 // Function to format number as currency

@@ -816,16 +816,19 @@ def dashboard():
         pelanggan_count = len(sistem_manajemen.dapatkan_semua_pelanggan())
         users_count = len(pengguna_manager.get_all_users())
         tagihan_stats = sistem_manajemen.dapatkan_statistik_tagihan()
+        tagihan_jatuh_tempo = sistem_manajemen.dapatkan_tagihan_jatuh_tempo_hari_ini()
     else:
         pelanggan_count = len(sistem_manajemen.dapatkan_semua_pelanggan(user_id))
         users_count = 1  # Just current user
         tagihan_stats = sistem_manajemen.dapatkan_statistik_tagihan(user_id)
+        tagihan_jatuh_tempo = sistem_manajemen.dapatkan_tagihan_jatuh_tempo_hari_ini(user_id)
     
     return render_template(
         'dashboard.html',
         pelanggan_count=pelanggan_count,
         users_count=users_count,
         tagihan_stats=tagihan_stats,
+        tagihan_jatuh_tempo=tagihan_jatuh_tempo,
         is_admin=is_admin
     )
 
