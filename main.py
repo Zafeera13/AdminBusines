@@ -236,6 +236,20 @@ class SistemManajemenPelanggan:
             FOREIGN KEY (pelanggan_id) REFERENCES pelanggan (id)
         )
         ''')
+        
+        # Buat tabel akuntansi
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS akuntansi (
+            id INTEGER PRIMARY KEY,
+            jenis TEXT NOT NULL,
+            jumlah REAL NOT NULL,
+            deskripsi TEXT,
+            tanggal TEXT NOT NULL,
+            created_by INTEGER,
+            dibuat_pada TEXT,
+            FOREIGN KEY (created_by) REFERENCES pengguna (id)
+        )
+        ''')
 
         conn.commit()
         conn.close()
@@ -464,6 +478,184 @@ class SistemManajemenPelanggan:
             }
             
         return stats
+        
+    # Fungsi Akuntansi
+    def tambah_transaksi_akuntansi(self, jenis, jumlah, deskripsi="", tanggal=None, created_by=None):
+        """
+        Tambahkan transaksi akuntansi baru
+        Jenis: 'MODAL_AWAL', 'PENGELUARAN', 'PENDAPATAN', 'LAINNYA'
+        """
+        if tanggal is None:
+            tanggal = datetime.datetime.now().strftime("%Y-%m-%d")
+            
+        dibuat_pada = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+        INSERT INTO akuntansi (jenis, jumlah, deskripsi, tanggal, created_by, dibuat_pada)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ''', (jenis, jumlah, deskripsi, tanggal, created_by, dibuat_pada))
+        conn.commit()
+        lastrowid = cursor.lastrowid
+        conn.close()
+        return lastrowid
+        
+    def perbarui_transaksi_akuntansi(self, transaksi_id, jenis=None, jumlah=None, deskripsi=None, tanggal=None):
+        pembaruan = []
+        nilai = []
+
+        if jenis is not None:
+            pembaruan.append("jenis = ?")
+            nilai.append(jenis)
+        if jumlah is not None:
+            pembaruan.append("jumlah = ?")
+            nilai.append(jumlah)
+        if deskripsi is not None:
+            pembaruan.append("deskripsi = ?")
+            nilai.append(deskripsi)
+        if tanggal is not None:
+            pembaruan.append("tanggal = ?")
+            nilai.append(tanggal)
+
+        if not pembaruan:
+            return False
+
+        query = f"UPDATE akuntansi SET {', '.join(pembaruan)} WHERE id = ?"
+        nilai.append(transaksi_id)
+
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(query, nilai)
+        conn.commit()
+        conn.close()
+        return True
+        
+    def hapus_transaksi_akuntansi(self, transaksi_id):
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM akuntansi WHERE id = ?", (transaksi_id,))
+        conn.commit()
+        conn.close()
+        
+    def dapatkan_transaksi_akuntansi(self, transaksi_id):
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM akuntansi WHERE id = ?", (transaksi_id,))
+        hasil = cursor.fetchone()
+        conn.close()
+        return hasil
+        
+    def dapatkan_semua_transaksi_akuntansi(self, jenis=None, tanggal_mulai=None, tanggal_akhir=None, user_id=None):
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        params = []
+        where_clauses = []
+        
+        if jenis is not None:
+            where_clauses.append("jenis = ?")
+            params.append(jenis)
+            
+        if tanggal_mulai is not None:
+            where_clauses.append("tanggal >= ?")
+            params.append(tanggal_mulai)
+            
+        if tanggal_akhir is not None:
+            where_clauses.append("tanggal <= ?")
+            params.append(tanggal_akhir)
+            
+        if user_id is not None:
+            where_clauses.append("created_by = ?")
+            params.append(user_id)
+            
+        query = "SELECT * FROM akuntansi"
+        if where_clauses:
+            query += " WHERE " + " AND ".join(where_clauses)
+            
+        query += " ORDER BY tanggal DESC, dibuat_pada DESC"
+        
+        cursor.execute(query, params)
+        results = cursor.fetchall()
+        conn.close()
+        return results
+        
+    def dapatkan_ringkasan_akuntansi(self, bulan=None, tahun=None):
+        """
+        Dapatkan ringkasan akuntansi untuk bulan dan tahun tertentu
+        Jika bulan dan tahun tidak disediakan, berikan ringkasan untuk tahun ini
+        """
+        now = datetime.datetime.now()
+        
+        if bulan is None:
+            bulan = now.month
+            
+        if tahun is None:
+            tahun = now.year
+            
+        # Format tanggal untuk query
+        tanggal_mulai = f"{tahun}-{bulan:02d}-01"
+        
+        # Hitung tanggal akhir (bulan + 1)
+        if bulan == 12:
+            tanggal_akhir = f"{tahun+1}-01-01"
+        else:
+            tanggal_akhir = f"{tahun}-{bulan+1:02d}-01"
+            
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        # Dapatkan semua transaksi dalam rentang waktu
+        cursor.execute("""
+            SELECT jenis, SUM(jumlah) as total
+            FROM akuntansi
+            WHERE tanggal >= ? AND tanggal < ?
+            GROUP BY jenis
+        """, (tanggal_mulai, tanggal_akhir))
+        
+        result = cursor.fetchall()
+        
+        # Dapatkan total tagihan dibayar dalam bulan ini
+        cursor.execute("""
+            SELECT SUM(jumlah) as total
+            FROM tagihan
+            WHERE status_pembayaran = 'DIBAYAR'
+            AND substr(dibuat_pada, 1, 7) = ?
+        """, (f"{tahun}-{bulan:02d}",))
+        
+        pendapatan_tagihan = cursor.fetchone()[0] or 0
+        
+        conn.close()
+        
+        # Format hasil
+        ringkasan = {
+            'MODAL_AWAL': 0,
+            'PENGELUARAN': 0,
+            'PENDAPATAN': 0,
+            'LAINNYA': 0,
+            'PENDAPATAN_TAGIHAN': pendapatan_tagihan
+        }
+        
+        for row in result:
+            jenis = row[0]
+            total = row[1] or 0
+            ringkasan[jenis] = total
+            
+        # Hitung pendapatan kotor dan bersih
+        pendapatan_kotor = ringkasan['PENDAPATAN'] + ringkasan['PENDAPATAN_TAGIHAN']
+        pendapatan_bersih = pendapatan_kotor - ringkasan['PENGELUARAN']
+        
+        # Hitung laba kotor dan bersih
+        laba_kotor = pendapatan_kotor
+        laba_bersih = pendapatan_bersih
+        
+        # Tambahkan ke ringkasan
+        ringkasan['PENDAPATAN_KOTOR'] = pendapatan_kotor
+        ringkasan['PENDAPATAN_BERSIH'] = pendapatan_bersih
+        ringkasan['LABA_KOTOR'] = laba_kotor
+        ringkasan['LABA_BERSIH'] = laba_bersih
+        
+        return ringkasan
 
 # Inisialisasi objek
 pengguna_manager = Pengguna()
@@ -1037,6 +1229,181 @@ def set_status_tagihan(tagihan_id):
         return jsonify({'success': True, 'message': 'Status berhasil diperbarui'})
     else:
         return jsonify({'success': False, 'message': 'Gagal memperbarui status'}), 500
+
+# Fitur Akuntansi
+@app.route('/akuntansi')
+@login_required
+@admin_required
+def akuntansi():
+    """Halaman manajemen akuntansi"""
+    bulan = request.args.get('bulan', type=int)
+    tahun = request.args.get('tahun', type=int)
+    
+    now = datetime.datetime.now()
+    if not bulan:
+        bulan = now.month
+    if not tahun:
+        tahun = now.year
+    
+    # Dapatkan ringkasan akuntansi untuk bulan dan tahun yang dipilih
+    ringkasan = sistem_manajemen.dapatkan_ringkasan_akuntansi(bulan, tahun)
+    
+    # Dapatkan semua transaksi untuk bulan dan tahun yang dipilih
+    tanggal_mulai = f"{tahun}-{bulan:02d}-01"
+    
+    # Hitung tanggal akhir (bulan + 1)
+    if bulan == 12:
+        tanggal_akhir = f"{tahun+1}-01-01"
+    else:
+        tanggal_akhir = f"{tahun}-{bulan+1:02d}-01"
+        
+    transaksi = sistem_manajemen.dapatkan_semua_transaksi_akuntansi(
+        tanggal_mulai=tanggal_mulai,
+        tanggal_akhir=tanggal_akhir
+    )
+    
+    # Data untuk dropdown bulan dan tahun
+    months = [
+        (1, 'Januari'), (2, 'Februari'), (3, 'Maret'), 
+        (4, 'April'), (5, 'Mei'), (6, 'Juni'),
+        (7, 'Juli'), (8, 'Agustus'), (9, 'September'),
+        (10, 'Oktober'), (11, 'November'), (12, 'Desember')
+    ]
+    years = range(2020, now.year + 2)
+    
+    return render_template(
+        'akuntansi.html',
+        ringkasan=ringkasan,
+        transaksi=transaksi,
+        bulan_selected=bulan,
+        tahun_selected=tahun,
+        months=months,
+        years=years,
+        month_name=dict(months)[bulan]
+    )
+
+@app.route('/akuntansi/tambah', methods=['POST'])
+@login_required
+@admin_required
+def tambah_transaksi():
+    """Tambah transaksi akuntansi baru"""
+    jenis = request.form.get('jenis')
+    jumlah = request.form.get('jumlah', type=float)
+    deskripsi = request.form.get('deskripsi', '')
+    tanggal = request.form.get('tanggal')
+    
+    if not jenis or not jumlah or not tanggal:
+        flash('Semua isian harus diisi dengan benar', 'danger')
+        return redirect(url_for('akuntansi'))
+    
+    # Bersihkan input jumlah dari format mata uang
+    if isinstance(jumlah, str):
+        jumlah = jumlah.replace('.', '').replace(',', '.')
+        try:
+            jumlah = float(jumlah)
+        except ValueError:
+            flash('Nilai jumlah tidak valid', 'danger')
+            return redirect(url_for('akuntansi'))
+    
+    user_id = session['user']['id']
+    transaksi_id = sistem_manajemen.tambah_transaksi_akuntansi(
+        jenis, jumlah, deskripsi, tanggal, user_id
+    )
+    
+    if transaksi_id:
+        flash('Transaksi berhasil ditambahkan', 'success')
+    else:
+        flash('Gagal menambahkan transaksi', 'danger')
+    
+    # Parse bulan dan tahun dari tanggal untuk redirect
+    tanggal_parts = tanggal.split('-')
+    if len(tanggal_parts) == 3:
+        tahun, bulan = int(tanggal_parts[0]), int(tanggal_parts[1])
+        return redirect(url_for('akuntansi', bulan=bulan, tahun=tahun))
+    
+    return redirect(url_for('akuntansi'))
+
+@app.route('/akuntansi/edit/<int:transaksi_id>', methods=['POST'])
+@login_required
+@admin_required
+def edit_transaksi(transaksi_id):
+    """Edit transaksi akuntansi"""
+    jenis = request.form.get('jenis')
+    jumlah = request.form.get('jumlah', type=float)
+    deskripsi = request.form.get('deskripsi', '')
+    tanggal = request.form.get('tanggal')
+    
+    if not jenis or not jumlah or not tanggal:
+        flash('Semua isian harus diisi dengan benar', 'danger')
+        return redirect(url_for('akuntansi'))
+    
+    # Bersihkan input jumlah dari format mata uang
+    if isinstance(jumlah, str):
+        jumlah = jumlah.replace('.', '').replace(',', '.')
+        try:
+            jumlah = float(jumlah)
+        except ValueError:
+            flash('Nilai jumlah tidak valid', 'danger')
+            return redirect(url_for('akuntansi'))
+    
+    success = sistem_manajemen.perbarui_transaksi_akuntansi(
+        transaksi_id, jenis, jumlah, deskripsi, tanggal
+    )
+    
+    if success:
+        flash('Transaksi berhasil diperbarui', 'success')
+    else:
+        flash('Gagal memperbarui transaksi', 'danger')
+    
+    # Parse bulan dan tahun dari tanggal untuk redirect
+    tanggal_parts = tanggal.split('-')
+    if len(tanggal_parts) == 3:
+        tahun, bulan = int(tanggal_parts[0]), int(tanggal_parts[1])
+        return redirect(url_for('akuntansi', bulan=bulan, tahun=tahun))
+    
+    return redirect(url_for('akuntansi'))
+
+@app.route('/akuntansi/hapus/<int:transaksi_id>', methods=['POST'])
+@login_required
+@admin_required
+def hapus_transaksi(transaksi_id):
+    """Hapus transaksi akuntansi"""
+    # Dapatkan data transaksi untuk mendapatkan tanggal
+    transaksi = sistem_manajemen.dapatkan_transaksi_akuntansi(transaksi_id)
+    
+    sistem_manajemen.hapus_transaksi_akuntansi(transaksi_id)
+    flash('Transaksi berhasil dihapus', 'success')
+    
+    # Redirect ke bulan dan tahun yang sama
+    if transaksi and len(transaksi) >= 4:
+        tanggal = transaksi[4]  # Kolom tanggal adalah indeks ke-4
+        tanggal_parts = tanggal.split('-')
+        if len(tanggal_parts) == 3:
+            tahun, bulan = int(tanggal_parts[0]), int(tanggal_parts[1])
+            return redirect(url_for('akuntansi', bulan=bulan, tahun=tahun))
+    
+    return redirect(url_for('akuntansi'))
+
+@app.route('/api/akuntansi/ringkasan', methods=['GET'])
+@login_required
+@admin_required
+def api_ringkasan_akuntansi():
+    """API untuk mendapatkan ringkasan akuntansi"""
+    bulan = request.args.get('bulan', type=int)
+    tahun = request.args.get('tahun', type=int)
+    
+    now = datetime.datetime.now()
+    if not bulan:
+        bulan = now.month
+    if not tahun:
+        tahun = now.year
+        
+    ringkasan = sistem_manajemen.dapatkan_ringkasan_akuntansi(bulan, tahun)
+    
+    return jsonify({
+        'success': True,
+        'data': ringkasan
+    })
 
 @app.errorhandler(404)
 def page_not_found(e):
