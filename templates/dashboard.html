@@ -188,12 +188,12 @@
                                 {% for tagihan in tagihan_jatuh_tempo %}
                                 <tr>
                                     <td>
-                                        <a href="{{ url_for('detail_pelanggan', pelanggan_id=tagihan[1]) }}" class="text-decoration-none">
+                                        <a href="{{ url_for('detail_pelanggan', pelanggan_id=tagihan['pelanggan_id']) }}" class="text-decoration-none">
                                             {{ tagihan.pelanggan_nama }}
                                         </a>
                                     </td>
-                                    <td>{{ tagihan[3] }}</td>
-                                    <td class="text-end">Rp {{ "{:,.0f}".format(tagihan[2]) }}</td>
+                                    <td>{{ tagihan['deskripsi'] }}</td>
+                                    <td class="text-end">Rp {{ "{:,.0f}".format(tagihan['jumlah']) }}</td>
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm">
                                             <a href="{{ url_for('edit_tagihan', tagihan_id=tagihan[0]) }}" class="btn btn-outline-primary" title="Edit"><i class="fas fa-edit"></i></a>
@@ -249,18 +249,18 @@
                                 {% for tagihan in tagihan_terlambat %}
                                 <tr>
                                     <td>
-                                        <a href="{{ url_for('detail_pelanggan', pelanggan_id=tagihan[1]) }}" class="text-decoration-none">
+                                        <a href="{{ url_for('detail_pelanggan', pelanggan_id=tagihan['pelanggan_id']) }}" class="text-decoration-none">
                                             {{ tagihan.pelanggan_nama }}
                                         </a>
                                     </td>
-                                    <td>{{ tagihan[3] }}</td>
-                                    <td>{{ tagihan[4] }}</td>
+                                    <td>{{ tagihan['deskripsi'] }}</td>
+                                    <td>{{ tagihan['tanggal_jatuh_tempo'] }}</td>
                                     <td class="text-center">
                                         <span class="badge {{ 'bg-danger' if tagihan.hari_terlambat > 7 else 'bg-warning text-dark' }}">
                                             {{ tagihan.hari_terlambat|int }} hari
                                         </span>
                                     </td>
-                                    <td class="text-end">Rp {{ "{:,.0f}".format(tagihan[2]) }}</td>
+                                    <td class="text-end">Rp {{ "{:,.0f}".format(tagihan['jumlah']) }}</td>
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm">
                                             <a href="{{ url_for('edit_tagihan', tagihan_id=tagihan[0]) }}" class="btn btn-outline-primary" title="Edit"><i class="fas fa-edit"></i></a>
