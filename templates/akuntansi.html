@@ -1,0 +1,374 @@
+{% extends 'base.html' %}
+
+{% block title %}Manajemen Akuntansi - CusAkuntanID{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2 class="mb-3">Manajemen Akuntansi</h2>
+        <h4>{{ month_name }} {{ tahun_selected }}</h4>
+    </div>
+    <div class="col-md-4">
+        <form method="get" class="d-flex">
+            <select name="bulan" class="form-select me-2">
+                {% for m_value, m_name in months %}
+                <option value="{{ m_value }}" {% if bulan_selected == m_value %}selected{% endif %}>{{ m_name }}</option>
+                {% endfor %}
+            </select>
+            <select name="tahun" class="form-select me-2">
+                {% for year in years %}
+                <option value="{{ year }}" {% if tahun_selected == year %}selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </form>
+    </div>
+</div>
+
+<!-- Ringkasan Akuntansi -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-dark">
+            <div class="card-body text-center">
+                <h5 class="card-title text-primary">MODAL AWAL</h5>
+                <h3 class="card-text">Rp {{ "{:,.0f}".format(ringkasan.get('modal_awal', 0)).replace(',', '.') }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-dark">
+            <div class="card-body text-center">
+                <h5 class="card-title text-danger">PENGELUARAN</h5>
+                <h3 class="card-text">Rp {{ "{:,.0f}".format(ringkasan.get('pengeluaran', 0)).replace(',', '.') }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-dark">
+            <div class="card-body text-center">
+                <h5 class="card-title text-success">PENDAPATAN</h5>
+                <h3 class="card-text">Rp {{ "{:,.0f}".format(ringkasan.get('pendapatan', 0)).replace(',', '.') }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-dark">
+            <div class="card-body text-center">
+                <h5 class="card-title text-info">LABA BERSIH</h5>
+                <h3 class="card-text">Rp {{ "{:,.0f}".format(ringkasan.get('laba_bersih', 0)).replace(',', '.') }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabel dan Form -->
+<div class="row">
+    <!-- Tabel Transaksi -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header bg-dark d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Daftar Transaksi</h5>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addTransaksiModal">
+                    <i class="fas fa-plus me-1"></i> Tambah Transaksi
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Jenis</th>
+                                <th>Deskripsi</th>
+                                <th>Jumlah</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if transaksi %}
+                                {% for tr in transaksi %}
+                                <tr>
+                                    <td>{{ tr[4] }}</td>
+                                    <td>
+                                        <span class="badge rounded-pill 
+                                            {% if tr[1] == 'MODAL_AWAL' %}bg-primary
+                                            {% elif tr[1] == 'PENGELUARAN' %}bg-danger
+                                            {% elif tr[1] == 'PENDAPATAN' %}bg-success
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ tr[1].replace('_', ' ') }}
+                                        </span>
+                                    </td>
+                                    <td>{{ tr[3] }}</td>
+                                    <td class="text-end">Rp {{ "{:,.0f}".format(tr[2]).replace(',', '.') }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-secondary me-1 edit-transaksi" 
+                                                data-id="{{ tr[0] }}"
+                                                data-jenis="{{ tr[1] }}"
+                                                data-jumlah="{{ tr[2] }}"
+                                                data-deskripsi="{{ tr[3] }}"
+                                                data-tanggal="{{ tr[4] }}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger delete-transaksi" data-id="{{ tr[0] }}" data-tanggal="{{ tr[4] }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center">Belum ada transaksi untuk periode ini</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grafik dan Informasi -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0">Statistik Keuangan</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="keuanganChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0">Informasi Rasio Keuangan</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Persentase Pendapatan terhadap Modal
+                        <span class="badge bg-primary rounded-pill">
+                            {{ "{:.1f}".format(ringkasan.get('rasio_pendapatan_modal', 0) * 100) }}%
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Persentase Pengeluaran terhadap Pendapatan
+                        <span class="badge bg-danger rounded-pill">
+                            {{ "{:.1f}".format(ringkasan.get('rasio_pengeluaran_pendapatan', 0) * 100) }}%
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Margin Laba Bersih
+                        <span class="badge bg-success rounded-pill">
+                            {{ "{:.1f}".format(ringkasan.get('margin_laba', 0) * 100) }}%
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tambah Transaksi -->
+<div class="modal fade" id="addTransaksiModal" tabindex="-1" aria-labelledby="addTransaksiModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{{ url_for('tambah_transaksi') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addTransaksiModalLabel">Tambah Transaksi Baru</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="jenis" class="form-label">Jenis Transaksi</label>
+                        <select class="form-select" id="jenis" name="jenis" required>
+                            <option value="">-- Pilih Jenis Transaksi --</option>
+                            <option value="MODAL_AWAL">Modal Awal</option>
+                            <option value="PENGELUARAN">Pengeluaran</option>
+                            <option value="PENDAPATAN">Pendapatan</option>
+                            <option value="LAINNYA">Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="jumlah" class="form-label">Jumlah (Rp)</label>
+                        <input type="text" class="form-control currency-input" id="jumlah" name="jumlah" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tanggal" class="form-label">Tanggal</label>
+                        <input type="date" class="form-control" id="tanggal" name="tanggal" required 
+                               value="{{ now.strftime('%Y-%m-%d') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="deskripsi" class="form-label">Deskripsi</label>
+                        <textarea class="form-control" id="deskripsi" name="deskripsi" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit Transaksi -->
+<div class="modal fade" id="editTransaksiModal" tabindex="-1" aria-labelledby="editTransaksiModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" id="editTransaksiForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editTransaksiModalLabel">Edit Transaksi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_jenis" class="form-label">Jenis Transaksi</label>
+                        <select class="form-select" id="edit_jenis" name="jenis" required>
+                            <option value="">-- Pilih Jenis Transaksi --</option>
+                            <option value="MODAL_AWAL">Modal Awal</option>
+                            <option value="PENGELUARAN">Pengeluaran</option>
+                            <option value="PENDAPATAN">Pendapatan</option>
+                            <option value="LAINNYA">Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_jumlah" class="form-label">Jumlah (Rp)</label>
+                        <input type="text" class="form-control currency-input" id="edit_jumlah" name="jumlah" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_tanggal" class="form-label">Tanggal</label>
+                        <input type="date" class="form-control" id="edit_tanggal" name="tanggal" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_deskripsi" class="form-label">Deskripsi</label>
+                        <textarea class="form-control" id="edit_deskripsi" name="deskripsi" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Perbarui</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Hapus Transaksi -->
+<div class="modal fade" id="deleteTransaksiModal" tabindex="-1" aria-labelledby="deleteTransaksiModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteTransaksiModalLabel">Konfirmasi Hapus</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Apakah Anda yakin ingin menghapus transaksi ini?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <form method="post" id="deleteTransaksiForm">
+                    <button type="submit" class="btn btn-danger">Hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Format input mata uang
+        const currencyInputs = document.querySelectorAll('.currency-input');
+        currencyInputs.forEach(input => {
+            input.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value === '') return;
+                value = parseInt(value, 10);
+                e.target.value = new Intl.NumberFormat('id-ID').format(value);
+            });
+        });
+
+        // Grafik statistik keuangan
+        const ctx = document.getElementById('keuanganChart').getContext('2d');
+        
+        const chartData = {
+            labels: ['Modal Awal', 'Pendapatan', 'Pengeluaran', 'Laba Bersih'],
+            datasets: [{
+                label: 'Statistik Keuangan (Rp)',
+                data: [
+                    {{ ringkasan.get('modal_awal', 0) }},
+                    {{ ringkasan.get('pendapatan', 0) }},
+                    {{ ringkasan.get('pengeluaran', 0) }},
+                    {{ ringkasan.get('laba_bersih', 0) }}
+                ],
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.5)',
+                    'rgba(75, 192, 192, 0.5)',
+                    'rgba(255, 99, 132, 0.5)',
+                    'rgba(153, 102, 255, 0.5)'
+                ],
+                borderColor: [
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(153, 102, 255, 1)'
+                ],
+                borderWidth: 1
+            }]
+        };
+
+        const myChart = new Chart(ctx, {
+            type: 'bar',
+            data: chartData,
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // Edit transaksi
+        const editButtons = document.querySelectorAll('.edit-transaksi');
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const jenis = this.getAttribute('data-jenis');
+                const jumlah = this.getAttribute('data-jumlah');
+                const deskripsi = this.getAttribute('data-deskripsi');
+                const tanggal = this.getAttribute('data-tanggal');
+                
+                document.getElementById('editTransaksiForm').action = `/akuntansi/edit/${id}`;
+                document.getElementById('edit_jenis').value = jenis;
+                document.getElementById('edit_jumlah').value = new Intl.NumberFormat('id-ID').format(jumlah);
+                document.getElementById('edit_deskripsi').value = deskripsi;
+                document.getElementById('edit_tanggal').value = tanggal;
+                
+                const editModal = new bootstrap.Modal(document.getElementById('editTransaksiModal'));
+                editModal.show();
+            });
+        });
+
+        // Hapus transaksi
+        const deleteButtons = document.querySelectorAll('.delete-transaksi');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                document.getElementById('deleteTransaksiForm').action = `/akuntansi/hapus/${id}`;
+                
+                const deleteModal = new bootstrap.Modal(document.getElementById('deleteTransaksiModal'));
+                deleteModal.show();
+            });
+        });
+    });
+</script>
+{% endblock %}
