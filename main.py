@@ -1247,6 +1247,25 @@ def set_status_tagihan(tagihan_id):
     
     berhasil = sistem_manajemen.perbarui_tagihan(tagihan_id, status_pembayaran=status)
     
+    # Jika status DIBAYAR, tambahkan transaksi pendapatan
+    if berhasil and status == 'DIBAYAR':
+        # Dapatkan informasi tagihan untuk deskripsi transaksi
+        pelanggan = sistem_manajemen.dapatkan_pelanggan(pelanggan_id)
+        pelanggan_nama = pelanggan[1] if pelanggan else "Pelanggan"
+        
+        # Tambahkan transaksi pendapatan ke akuntansi
+        deskripsi_transaksi = f"Pembayaran tagihan dari {pelanggan_nama}"
+        jumlah_tagihan = tagihan[2]  # Jumlah tagihan
+        tanggal_sekarang = datetime.datetime.now().strftime("%Y-%m-%d")
+        
+        sistem_manajemen.tambah_transaksi_akuntansi(
+            jenis="PENDAPATAN", 
+            jumlah=jumlah_tagihan, 
+            deskripsi=deskripsi_transaksi, 
+            tanggal=tanggal_sekarang, 
+            created_by=user_id
+        )
+    
     if berhasil:
         return jsonify({'success': True, 'message': 'Status berhasil diperbarui'})
     else:
@@ -1310,7 +1329,7 @@ def akuntansi():
 def tambah_transaksi():
     """Tambah transaksi akuntansi baru"""
     jenis = request.form.get('jenis')
-    jumlah = request.form.get('jumlah', type=float)
+    jumlah = request.form.get('jumlah')  # Ambil sebagai string dulu
     deskripsi = request.form.get('deskripsi', '')
     tanggal = request.form.get('tanggal')
     
@@ -1319,17 +1338,17 @@ def tambah_transaksi():
         return redirect(url_for('akuntansi'))
     
     # Bersihkan input jumlah dari format mata uang
-    if isinstance(jumlah, str):
-        jumlah = jumlah.replace('.', '').replace(',', '.')
-        try:
-            jumlah = float(jumlah)
-        except ValueError:
-            flash('Nilai jumlah tidak valid', 'danger')
-            return redirect(url_for('akuntansi'))
+    try:
+        # Hapus titik sebagai pemisah ribuan dan ganti koma dengan titik untuk desimal
+        jumlah_clean = jumlah.replace('.', '').replace(',', '.')
+        jumlah_float = float(jumlah_clean)
+    except (ValueError, AttributeError):
+        flash('Nilai jumlah tidak valid', 'danger')
+        return redirect(url_for('akuntansi'))
     
     user_id = session['user']['id']
     transaksi_id = sistem_manajemen.tambah_transaksi_akuntansi(
-        jenis, jumlah, deskripsi, tanggal, user_id
+        jenis, jumlah_float, deskripsi, tanggal, user_id
     )
     
     if transaksi_id:
@@ -1351,7 +1370,7 @@ def tambah_transaksi():
 def edit_transaksi(transaksi_id):
     """Edit transaksi akuntansi"""
     jenis = request.form.get('jenis')
-    jumlah = request.form.get('jumlah', type=float)
+    jumlah = request.form.get('jumlah')  # Ambil sebagai string dulu
     deskripsi = request.form.get('deskripsi', '')
     tanggal = request.form.get('tanggal')
     
@@ -1360,16 +1379,16 @@ def edit_transaksi(transaksi_id):
         return redirect(url_for('akuntansi'))
     
     # Bersihkan input jumlah dari format mata uang
-    if isinstance(jumlah, str):
-        jumlah = jumlah.replace('.', '').replace(',', '.')
-        try:
-            jumlah = float(jumlah)
-        except ValueError:
-            flash('Nilai jumlah tidak valid', 'danger')
-            return redirect(url_for('akuntansi'))
+    try:
+        # Hapus titik sebagai pemisah ribuan dan ganti koma dengan titik untuk desimal
+        jumlah_clean = jumlah.replace('.', '').replace(',', '.')
+        jumlah_float = float(jumlah_clean)
+    except (ValueError, AttributeError):
+        flash('Nilai jumlah tidak valid', 'danger')
+        return redirect(url_for('akuntansi'))
     
     success = sistem_manajemen.perbarui_transaksi_akuntansi(
-        transaksi_id, jenis, jumlah, deskripsi, tanggal
+        transaksi_id, jenis, jumlah_float, deskripsi, tanggal
     )
     
     if success:
