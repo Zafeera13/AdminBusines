@@ -857,6 +857,18 @@ def dashboard():
         tagihan_terlambat = sistem_manajemen.dapatkan_tagihan_terlambat(user_id)
     
     # Convert tuples to dictionaries
+    if tagihan_jatuh_tempo:
+        tagihan_jatuh_tempo = [{
+            'id': t[0],
+            'pelanggan_id': t[1],
+            'jumlah': t[2],
+            'deskripsi': t[3],
+            'tanggal_jatuh_tempo': t[4],
+            'status_pembayaran': t[5],
+            'dibuat_pada': t[6],
+            'pelanggan_nama': t.pelanggan_nama if hasattr(t, 'pelanggan_nama') else ''
+        } for t in tagihan_jatuh_tempo]
+    
     if tagihan_terlambat:
         tagihan_terlambat = [{
             'id': t[0],
