@@ -463,6 +463,37 @@ class SistemManajemenPelanggan:
         hasil = cursor.fetchall()
         conn.close()
         return hasil
+        
+    def dapatkan_tagihan_terlambat(self, user_id=None):
+        """Dapatkan tagihan yang sudah terlambat (jatuh tempo sebelum hari ini)"""
+        tanggal_hari_ini = datetime.datetime.now().strftime("%Y-%m-%d")
+        
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        if user_id is not None:
+            # Dapatkan tagihan terlambat untuk pelanggan yang dimiliki user
+            cursor.execute("""
+                SELECT t.*, p.nama as pelanggan_nama,
+                       julianday(?) - julianday(t.tanggal_jatuh_tempo) AS hari_terlambat
+                FROM tagihan t 
+                JOIN pelanggan p ON t.pelanggan_id = p.id 
+                WHERE p.user_id = ? AND t.tanggal_jatuh_tempo < ? AND t.status_pembayaran = 'BELUM DIBAYAR'
+                ORDER BY t.tanggal_jatuh_tempo ASC
+            """, (tanggal_hari_ini, user_id, tanggal_hari_ini))
+        else:
+            cursor.execute("""
+                SELECT t.*, p.nama as pelanggan_nama,
+                       julianday(?) - julianday(t.tanggal_jatuh_tempo) AS hari_terlambat
+                FROM tagihan t 
+                JOIN pelanggan p ON t.pelanggan_id = p.id 
+                WHERE t.tanggal_jatuh_tempo < ? AND t.status_pembayaran = 'BELUM DIBAYAR'
+                ORDER BY t.tanggal_jatuh_tempo ASC
+            """, (tanggal_hari_ini, tanggal_hari_ini))
+            
+        hasil = cursor.fetchall()
+        conn.close()
+        return hasil
 
     def dapatkan_statistik_tagihan(self, user_id=None):
         conn = self.get_connection()
@@ -817,11 +848,13 @@ def dashboard():
         users_count = len(pengguna_manager.get_all_users())
         tagihan_stats = sistem_manajemen.dapatkan_statistik_tagihan()
         tagihan_jatuh_tempo = sistem_manajemen.dapatkan_tagihan_jatuh_tempo_hari_ini()
+        tagihan_terlambat = sistem_manajemen.dapatkan_tagihan_terlambat()
     else:
         pelanggan_count = len(sistem_manajemen.dapatkan_semua_pelanggan(user_id))
         users_count = 1  # Just current user
         tagihan_stats = sistem_manajemen.dapatkan_statistik_tagihan(user_id)
         tagihan_jatuh_tempo = sistem_manajemen.dapatkan_tagihan_jatuh_tempo_hari_ini(user_id)
+        tagihan_terlambat = sistem_manajemen.dapatkan_tagihan_terlambat(user_id)
     
     return render_template(
         'dashboard.html',
@@ -829,6 +862,7 @@ def dashboard():
         users_count=users_count,
         tagihan_stats=tagihan_stats,
         tagihan_jatuh_tempo=tagihan_jatuh_tempo,
+        tagihan_terlambat=tagihan_terlambat,
         is_admin=is_admin
     )
 
