@@ -1,225 +1,241 @@
-# Panduan Lengkap CusAkuntanID dengan Termux & Ngrok
+# Panduan Lengkap CusAkuntanID di Termux
 
-Panduan ini akan membantu Anda menjalankan CusAkuntanID di perangkat Android dengan Termux, dan mengaksesnya dari jarak jauh melalui Ngrok.
+## Pengenalan
+
+Dokumen ini berisi panduan lengkap untuk menginstal, mengkonfigurasi, dan menjalankan aplikasi CusAkuntanID di Termux pada perangkat Android. Dengan mengikuti panduan ini, Anda akan dapat menjalankan aplikasi bisnis Anda dari smartphone dengan akses internet yang dapat dijangkau dari mana saja.
 
 ## Daftar Isi
-1. [Persiapan Awal](#1-persiapan-awal)
-2. [Instalasi Termux](#2-instalasi-termux)
-3. [Setup CusAkuntanID di Termux](#3-setup-cusakuntanid-di-termux)
-4. [Setup Ngrok untuk Akses Jarak Jauh](#4-setup-ngrok-untuk-akses-jarak-jauh)
-5. [Menjalankan Aplikasi](#5-menjalankan-aplikasi)
-6. [Akses Jarak Jauh](#6-akses-jarak-jauh)
-7. [Pemeliharaan & Troubleshooting](#7-pemeliharaan--troubleshooting)
-8. [FAQ](#8-faq)
 
-## 1. Persiapan Awal
+1. [Persyaratan Sistem](#persyaratan-sistem)
+2. [Instalasi Termux](#instalasi-termux)
+3. [Setup Awal](#setup-awal)
+4. [Instalasi CusAkuntanID](#instalasi-cusakuntanid)
+5. [Menjalankan Aplikasi](#menjalankan-aplikasi)
+6. [Akses Jarak Jauh dengan Ngrok](#akses-jarak-jauh-dengan-ngrok)
+7. [Monitoring Aplikasi](#monitoring-aplikasi)
+8. [Pemecahan Masalah](#pemecahan-masalah)
+9. [Fitur Lanjutan](#fitur-lanjutan)
 
-### 1.1 Memastikan Persyaratan
-- Perangkat Android dengan sistem operasi minimal Android 7.0
-- Ruang penyimpanan minimal 1GB tersedia
-- Koneksi internet yang stabil
+## Persyaratan Sistem
 
-### 1.2 Unduh Aplikasi Termux
-Unduh Termux dari F-Droid (direkomendasikan):
-- Kunjungi [F-Droid.org](https://f-droid.org/)
-- Cari dan unduh Termux
-- Atau gunakan link langsung: [Termux di F-Droid](https://f-droid.org/en/packages/com.termux/)
+- Smartphone Android versi 7.0 ke atas
+- Minimal 3GB RAM tersedia
+- Minimal 500MB ruang penyimpanan kosong
+- Koneksi internet
 
-**Catatan**: Versi Termux di Google Play Store tidak lagi diperbarui dan mungkin memiliki masalah kompatibilitas.
+## Instalasi Termux
 
-## 2. Instalasi Termux
-
-### 2.1 Setup Awal Termux
-1. Buka aplikasi Termux
-2. Tunggu proses instalasi awal selesai
-3. Berikan akses penyimpanan:
-   ```bash
+1. Unduh Termux dari [F-Droid](https://f-droid.org/packages/com.termux/) (direkomendasikan)
+2. Pasang Termux dan buka aplikasi
+3. Berikan izin penyimpanan dengan menjalankan:
+   ```
    termux-setup-storage
    ```
-   Ketika diminta, berikan izin untuk mengakses penyimpanan.
+4. Tunggu sampai proses selesai dan tekan "Allow" jika diminta
 
-### 2.2 Update Termux
-```bash
-pkg update && pkg upgrade -y
+## Setup Awal
+
+1. Perbarui repositori paket dan paket dasar:
+   ```
+   pkg update -y && pkg upgrade -y
+   ```
+
+2. Pasang paket yang diperlukan:
+   ```
+   pkg install python git openssh wget -y
+   ```
+
+3. Buat direktori untuk aplikasi:
+   ```
+   mkdir -p ~/storage/shared/CusAkuntanID
+   ```
+
+4. Masuk ke direktori tersebut:
+   ```
+   cd ~/storage/shared/CusAkuntanID
+   ```
+
+## Instalasi CusAkuntanID
+
+### Metode 1: Unduh dari Repositori
+
+1. Clone repositori:
+   ```
+   git clone https://github.com/username/CusAkuntanID.git .
+   ```
+
+2. Pasang dependensi Python:
+   ```
+   pip install -r requirements.txt
+   ```
+
+### Metode 2: Unduh Arsip ZIP
+
+1. Unduh arsip CusAkuntanID.zip
+2. Ekstrak arsip ke direktori CusAkuntanID:
+   ```
+   unzip /path/to/CusAkuntanID.zip -d ~/storage/shared/CusAkuntanID
+   ```
+3. Pasang dependensi Python:
+   ```
+   cd ~/storage/shared/CusAkuntanID
+   pip install -r requirements.txt
+   ```
+
+## Menjalankan Aplikasi
+
+1. Pastikan Anda berada di direktori aplikasi:
+   ```
+   cd ~/storage/shared/CusAkuntanID
+   ```
+
+2. Jalankan aplikasi menggunakan script otomatis:
+   ```
+   ./run_app.sh
+   ```
+
+3. Atau jalankan secara manual:
+   ```
+   python main.py
+   ```
+
+4. Aplikasi akan tersedia di alamat lokal yang ditampilkan di terminal (biasanya http://localhost:5000 atau http://127.0.0.1:5000)
+
+## Akses Jarak Jauh dengan Ngrok
+
+### Panduan Ngrok
+
+Ngrok memungkinkan Anda mengakses aplikasi dari jarak jauh melalui internet. Berikut langkah-langkah untuk menggunakannya:
+
+#### Metode 1: Menggunakan Auto Ngrok (Direkomendasikan)
+
+1. Download dan setup Ngrok (jika belum dilakukan):
+   ```
+   ./download_ngrok.sh
+   ```
+
+2. Jalankan Auto Ngrok:
+   ```
+   ./auto_ngrok.sh
+   ```
+
+3. URL HTTPS untuk akses jarak jauh akan ditampilkan dengan warna hijau
+4. Salin URL tersebut untuk mengakses aplikasi dari perangkat mana saja
+5. Token Ngrok sudah dikonfigurasi secara otomatis
+
+#### Metode 2: Setup Manual Ngrok
+
+1. Download dan setup Ngrok:
+   ```
+   ./setup_ngrok_auto.sh
+   ```
+
+2. Jalankan Ngrok dengan script Python:
+   ```
+   ./run_ngrok.sh
+   ```
+
+3. URL HTTPS untuk akses jarak jauh akan ditampilkan
+4. Salin URL tersebut untuk mengakses aplikasi dari perangkat mana saja
+
+### Perhatian untuk Ngrok
+
+- URL Ngrok gratis bersifat sementara dan akan berubah setiap restart
+- Untuk URL permanen, Anda dapat berlangganan layanan Ngrok berbayar
+- Ada batasan bandwidth dan koneksi pada akun Ngrok gratis
+
+## Monitoring Aplikasi
+
+1. Untuk memantau status aplikasi dan Ngrok dalam satu tampilan:
+   ```
+   ./monitor.sh
+   ```
+
+2. Tampilan monitoring menunjukkan:
+   - Status aplikasi
+   - Status Ngrok dan URL publik
+   - Informasi jaringan
+   - Penggunaan sistem (CPU, RAM, dll)
+   - Uptime aplikasi
+
+## Pemecahan Masalah
+
+### Masalah Umum
+
+1. **Aplikasi tidak dapat berjalan**
+   - Pastikan semua dependensi terinstal dengan benar
+   - Periksa log error di terminal
+   - Coba restart Termux dan coba lagi
+
+2. **Ngrok error "Tunnel session failed"**
+   - Pastikan aplikasi sedang berjalan di port 5000
+   - Periksa koneksi internet Anda
+   - Jalankan `./download_ngrok.sh` untuk memperbaiki instalasi Ngrok
+
+3. **Izin ditolak saat menjalankan script**
+   - Jalankan perintah berikut untuk memberikan izin eksekusi:
+     ```
+     chmod +x *.sh *.py
+     ```
+
+4. **Database error**
+   - Pastikan file database ada dan tidak rusak
+   - Jika rusak, gunakan database cadangan dari direktori backup
+
+### Reset Aplikasi
+
+Jika Anda perlu mereset aplikasi ke kondisi awal:
+
+```
+rm -f manajemen_pelanggan.db
+python main.py
 ```
 
-## 3. Setup CusAkuntanID di Termux
+## Fitur Lanjutan
 
-### 3.1 Menyalin File Proyek
-Ada dua cara untuk menyalin file proyek:
+### Backup Otomatis
 
-#### Metode 1: Menggunakan Direktori Download
-Jika Anda telah mendownload file proyek ke perangkat Android:
-```bash
-# Buat direktori proyek
-mkdir -p ~/storage/shared/CusAkuntanID
+1. Aktifkan backup otomatis:
+   ```
+   ./setup_backup.sh
+   ```
 
-# Salin file dari Download (sesuaikan path jika berbeda)
-cp -r /sdcard/Download/CusAkuntanID/* ~/storage/shared/CusAkuntanID/
+2. Backup manual:
+   ```
+   ./backup.sh
+   ```
 
-# Masuk ke direktori proyek
+### Startup Otomatis
+
+Anda dapat mengatur agar aplikasi berjalan secara otomatis saat Termux dibuka:
+
+1. Edit file `~/.bashrc`:
+   ```
+   nano ~/.bashrc
+   ```
+
+2. Tambahkan baris berikut di akhir file:
+   ```
+   cd ~/storage/shared/CusAkuntanID && ./run_app.sh
+   ```
+
+### Update Aplikasi
+
+Untuk mendapatkan pembaruan aplikasi terbaru:
+
+```
 cd ~/storage/shared/CusAkuntanID
-
-# Buat file script bisa dieksekusi
-chmod +x *.sh
-```
-
-#### Metode 2: Clone dari Repository (Jika menggunakan Git)
-```bash
-# Install Git
-pkg install git -y
-
-# Clone repository (ganti URL dengan URL repository yang benar)
-git clone https://repository-url.git ~/storage/shared/CusAkuntanID
-
-# Masuk ke direktori proyek
-cd ~/storage/shared/CusAkuntanID
-
-# Buat file script bisa dieksekusi
-chmod +x *.sh
-```
-
-### 3.2 Menjalankan Script Setup
-```bash
-./setup_termux.sh
-```
-
-Script ini akan:
-- Memperbarui paket Termux
-- Menginstall Python dan dependensi yang dibutuhkan
-- Membuat lingkungan virtual Python
-- Menginstall semua paket Python yang diperlukan
-
-## 4. Setup Ngrok untuk Akses Jarak Jauh
-
-### 4.1 Mendaftar Akun Ngrok
-1. Kunjungi [ngrok.com](https://ngrok.com) dan daftar akun gratis
-2. Setelah login, kunjungi [dashboard](https://dashboard.ngrok.com)
-3. Cari dan salin token autentikasi Anda
-
-### 4.2 Menginstall Ngrok di Termux
-```bash
-# Pastikan Anda berada di direktori proyek
-cd ~/storage/shared/CusAkuntanID
-
-# Jalankan script setup Ngrok
-./setup_ngrok.sh
-```
-
-Ketika diminta, masukkan token autentikasi yang telah Anda salin.
-
-## 5. Menjalankan Aplikasi
-
-### 5.1 Menjalankan CusAkuntanID
-```bash
-# Pastikan Anda berada di direktori proyek
-cd ~/storage/shared/CusAkuntanID
-
-# Jalankan aplikasi
-./run_app.sh
-```
-
-Script ini akan:
-- Mengaktifkan lingkungan virtual Python
-- Menampilkan alamat IP lokal untuk akses di jaringan yang sama
-- Menjalankan server dengan Gunicorn
-
-### 5.2 Mengakses Aplikasi Secara Lokal
-- Pada perangkat yang sama, buka browser dan kunjungi: `http://localhost:5000`
-- Dari perangkat lain pada jaringan yang sama, gunakan alamat IP yang ditampilkan oleh script
-
-## 6. Akses Jarak Jauh
-
-### 6.1 Menjalankan Ngrok dengan Antarmuka Python
-Buka terminal Termux baru (geser dari kiri untuk menu, pilih "New Session"), kemudian:
-```bash
-cd ~/storage/shared/CusAkuntanID
-./run_ngrok.sh
-```
-
-Script Python akan:
-- Memeriksa instalasi Ngrok
-- Memverifikasi konfigurasi token (dan meminta jika belum dikonfigurasi)
-- Menjalankan Ngrok dengan monitoring otomatis
-- Menampilkan URL dengan warna hijau untuk memudahkan penyalinan
-- Memperbarui informasi status koneksi secara berkala
-- Menyediakan pesan error yang jelas jika terjadi masalah
-
-### 6.2 Mengakses Aplikasi dari Jarak Jauh
-1. Perhatikan bagian "URL AKSES JARAK JAUH" yang ditampilkan dengan warna hijau oleh script
-2. Salin URL HTTPS yang diberikan (misalnya: `https://a1b2c3d4.ngrok.io`)
-3. Gunakan URL ini untuk mengakses aplikasi dari perangkat manapun dengan koneksi internet
-4. Script akan terus memonitor koneksi dan memperbarui informasi setiap 30 detik
-
-**Catatan Penting**:
-- URL Ngrok gratis akan berubah setiap kali Anda me-restart Ngrok
-- Ngrok gratis memiliki batasan bandwidth dan koneksi
-- Untuk penggunaan yang lebih serius, pertimbangkan berlangganan Ngrok
-
-## 7. Pemeliharaan & Troubleshooting
-
-### 7.1 Memperbarui Aplikasi
-Jika ada pembaruan aplikasi:
-```bash
-# Masuk ke direktori proyek
-cd ~/storage/shared/CusAkuntanID
-
-# Salin file baru jika menggunakan metode download manual
-# atau jika menggunakan Git:
 git pull
-
-# Jalankan setup lagi untuk memastikan dependensi terbaru
-./setup_termux.sh
+pip install -r requirements.txt
 ```
 
-### 7.2 Masalah Umum dan Solusi
+## Bantuan dan Dukungan
 
-#### Aplikasi tidak bisa diakses secara lokal
-- Periksa apakah server berjalan dengan benar
-- Pastikan Anda menggunakan alamat IP dan port yang benar
-- Coba restart aplikasi: `./run_app.sh`
+Jika Anda memerlukan bantuan lebih lanjut atau mengalami masalah yang tidak tercantum dalam panduan ini, silakan hubungi dukungan teknis kami melalui:
 
-#### Ngrok error "failed to start tunnel"
-- Periksa apakah token autentikasi sudah dikonfigurasi
-- Pastikan server aplikasi sudah berjalan terlebih dahulu
-- Coba konfigurasi ulang token: `./ngrok config add-authtoken YOUR_TOKEN`
-
-#### Error pada script Python Ngrok
-- **"Error mendapatkan informasi tunnel"**: Pastikan Ngrok berjalan dengan benar. Tunggu beberapa saat dan script akan terus mencoba
-- **"Module not found"**: Pastikan setup_termux.sh telah dijalankan untuk menginstall semua modul Python yang dibutuhkan
-- **"Token belum dikonfigurasi"**: Ikuti petunjuk untuk mengkonfigurasi token saat diminta. Anda juga bisa mengkonfigurasinya secara manual
-- **Warna tidak tampil**: Beberapa terminal Termux mungkin tidak mendukung tampilan warna. Tetap gunakan URL yang diberikan
-
-#### Error "Address already in use"
-- Ada aplikasi lain yang menggunakan port 5000
-- Hentikan aplikasi tersebut atau gunakan port lain
-
-## 8. FAQ
-
-### 8.1 Apakah data saya aman dengan Ngrok?
-Ngrok menyediakan tunnel terenkripsi, namun untuk keamanan data, pastikan:
-- Gunakan kata sandi yang kuat pada aplikasi
-- Jangan membagikan URL Ngrok kepada orang yang tidak berwenang
-- Pertimbangkan untuk menonaktifkan Ngrok ketika tidak digunakan
-
-### 8.2 Mengapa server harus restart setiap kali saya keluar dari Termux?
-Termux menghentikan semua proses ketika aplikasi ditutup. Untuk menjalankan server terus menerus:
-- Gunakan tombol "ACQUIRE WAKELOCK" dari menu Termux
-- Pertimbangkan menggunakan Termux:Boot untuk menjalankan server saat startup
-
-### 8.3 Apa batas penggunaan Ngrok gratis?
-Ngrok gratis memiliki beberapa batasan:
-- 1 tunnel aktif pada satu waktu
-- 40 koneksi per menit
-- URL baru setiap restart
-- Tanpa custom subdomain
-- Untuk penggunaan lebih lanjut, lihat [harga Ngrok](https://ngrok.com/pricing)
-
-### 8.4 Bagaimana jika aplikasi tidak berjalan setelah menutup Termux?
-Gunakan Termux:Boot untuk menjalankan aplikasi saat startup, atau gunakan fitur "Acquire Wakelock" di Termux untuk mencegah proses dihentikan.
+- Email: support@cusakuntanid.com
+- WhatsApp: +62 812 3456 7890
 
 ---
 
-Untuk pertanyaan lebih lanjut atau bantuan, hubungi pengembang aplikasi.
-
-*Terakhir diperbarui: Maret 2025*
+Terima kasih telah menggunakan CusAkuntanID. Semoga aplikasi ini membantu dalam mengelola bisnis Anda!

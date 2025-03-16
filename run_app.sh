@@ -1,35 +1,54 @@
 #!/bin/bash
-# Script untuk menjalankan aplikasi CusAkuntanID
+# Script untuk menjalankan aplikasi CusAkuntanID di Termux
 
-echo "==== Menjalankan CusAkuntanID ===="
+echo "==== MENJALANKAN CUSAKUNTANID ===="
+echo "Aplikasi akan berjalan di port 5000"
+echo ""
 
-# Mengaktifkan virtualenv jika ada
-if [ -d "venv" ]; then
-    echo "Mengaktifkan lingkungan virtual..."
-    source venv/bin/activate
-else
-    echo "PERINGATAN: Virtual environment tidak ditemukan."
-    echo "Aplikasi akan berjalan dengan Python sistem."
+# Memeriksa apakah Python tersedia
+command -v python3 >/dev/null 2>&1 || { 
+    echo "Python 3 tidak terinstall. Mencoba dengan python..."
+    command -v python >/dev/null 2>&1 || {
+        echo "ERROR: Python tidak terinstall!"
+        echo "Jalankan setup_termux.sh terlebih dahulu untuk menginstall Python."
+        exit 1
+    }
+    PYTHON_CMD="python"
+} || {
+    PYTHON_CMD="python3"
+}
+
+# Mencoba mendapatkan alamat IP
+IP_ADDRESS=$(ifconfig 2>/dev/null | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n 1)
+
+if [ -z "$IP_ADDRESS" ]; then
+    # Jika ifconfig tidak tersedia atau tidak ada IP non-loopback
+    IP_ADDRESS="0.0.0.0"
 fi
 
-# Menetapkan variabel lingkungan
-export FLASK_APP=main.py
-export FLASK_ENV=production
-export SESSION_SECRET="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)"
-
-# Tampilkan info koneksi
-echo "==== Informasi Koneksi ===="
-IPADDR=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n 1)
-echo "Aplikasi akan berjalan di: http://$IPADDR:5000"
-echo "Untuk akses pada jaringan lokal, gunakan alamat di atas."
-echo "Untuk akses dari jarak jauh, gunakan ngrok (lihat setup_ngrok.sh)."
-echo "=============================="
-
-# Menjalankan aplikasi dengan Gunicorn
-echo "Menjalankan server..."
-gunicorn --bind 0.0.0.0:5000 --reuse-port main:app
-
-# Pesan jika server berhenti
+echo "Aplikasi akan tersedia di: http://$IP_ADDRESS:5000"
+echo "Lokal: http://localhost:5000 atau http://127.0.0.1:5000"
 echo ""
-echo "Server telah berhenti."
-echo ""
+echo "Tekan Ctrl+C untuk keluar"
+echo "====================================="
+
+# Aktifkan virtualenv jika ada
+if [ -d "venv" ]; then
+    echo "Mengaktifkan lingkungan virtual Python..."
+    source venv/bin/activate
+fi
+
+# Memeriksa dependensi (minimal)
+$PYTHON_CMD -c "import flask" 2>/dev/null || {
+    echo "Memasang dependensi yang diperlukan..."
+    pip install flask flask-login flask-sqlalchemy flask-wtf email-validator
+}
+
+# Jalankan aplikasi
+echo "Memulai aplikasi..."
+if command -v gunicorn >/dev/null 2>&1; then
+    gunicorn --bind 0.0.0.0:5000 --reuse-port --reload main:app
+else
+    # Gunakan server development Flask jika gunicorn tidak tersedia
+    FLASK_ENV=development $PYTHON_CMD main.py
+fi
