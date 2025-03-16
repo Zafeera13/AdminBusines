@@ -723,8 +723,8 @@ class SistemManajemenPelanggan:
         ringkasan['laba_kotor'] = laba_kotor
         ringkasan['laba_bersih'] = laba_bersih
         
-        # Hitung CASH PERUSAHAAN (modal awal - pengeluaran + laba bersih)
-        ringkasan['cash_perusahaan'] = ringkasan['modal_awal'] - ringkasan['pengeluaran'] + laba_bersih
+        # Hitung CASH PERUSAHAAN (modal awal - pengeluaran + pendapatan)
+        ringkasan['cash_perusahaan'] = ringkasan['modal_awal'] - ringkasan['pengeluaran'] + ringkasan['pendapatan']
         
         # Tambahkan rasio keuangan
         if ringkasan['modal_awal'] > 0:
