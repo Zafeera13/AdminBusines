@@ -36,16 +36,56 @@ def print_header():
 
 def check_ngrok_installed():
     """Memeriksa apakah ngrok sudah terinstall"""
-    if not os.path.exists("./ngrok"):
+    ngrok_exe = "./ngrok"
+    if os.name == 'nt':  # Windows
+        ngrok_exe = "./ngrok.exe"
+        
+    if not os.path.exists(ngrok_exe):
         return False
+        
+    # Pastikan file dapat dieksekusi
+    if os.name != 'nt':  # Unix/Linux/Mac
+        try:
+            # Coba berikan izin eksekusi
+            os.chmod(ngrok_exe, 0o777)
+            print("Izin eksekusi diberikan ke file ngrok")
+        except Exception as e:
+            print(f"Peringatan: Gagal mengubah izin file: {e}")
+            try:
+                # Coba dengan subprocess
+                subprocess.run(['chmod', '+x', ngrok_exe], check=False)
+                print("Izin eksekusi diberikan dengan subprocess")
+            except Exception as e2:
+                print(f"Peringatan: Gagal dengan subprocess: {e2}")
+    
     return True
 
 def configure_ngrok_token():
     """Mengkonfigurasi token Ngrok jika belum dikonfigurasi"""
     print("Memeriksa konfigurasi token Ngrok...")
+    ngrok_exe = "./ngrok"
+    if os.name == 'nt':  # Windows
+        ngrok_exe = "./ngrok.exe"
+    
+    # Pastikan file dapat dieksekusi
+    if os.name != 'nt':  # Unix/Linux/Mac
+        try:
+            # Coba berikan izin eksekusi
+            os.chmod(ngrok_exe, 0o777)
+            print("Izin eksekusi diberikan ke file ngrok")
+        except Exception as e:
+            print(f"Peringatan: Gagal mengubah izin file: {e}")
+            try:
+                # Coba dengan subprocess
+                subprocess.run(['chmod', '+x', ngrok_exe], check=False)
+                print("Izin eksekusi diberikan dengan subprocess")
+            except Exception as e2:
+                print(f"Peringatan: Gagal dengan subprocess: {e2}")
+    
     try:
+        # Jalankan dengan path relatif
         result = subprocess.run(
-            ["./ngrok", "config", "check"],
+            [ngrok_exe, "config", "check"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
@@ -54,7 +94,7 @@ def configure_ngrok_token():
         if "authtoken" not in result.stdout and "error" in result.stderr.lower():
             print("Token Ngrok belum dikonfigurasi. Mengkonfigurasi sekarang...")
             token_result = subprocess.run(
-                ["./ngrok", "config", "add-authtoken", NGROK_AUTH_TOKEN],
+                [ngrok_exe, "config", "add-authtoken", NGROK_AUTH_TOKEN],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True
@@ -126,9 +166,43 @@ def run_ngrok(port):
     ngrok_process = None
     
     try:
+        # Mendapatkan path ngrok yang tepat
+        ngrok_exe = "./ngrok"
+        if os.name == 'nt':  # Windows
+            ngrok_exe = "./ngrok.exe"
+        
+        # Pastikan file dapat dieksekusi
+        if os.name != 'nt':  # Unix/Linux/Mac
+            try:
+                # Coba berikan izin eksekusi
+                os.chmod(ngrok_exe, 0o777)
+                print("Izin eksekusi diberikan ke file ngrok")
+            except Exception as e:
+                print(f"Peringatan: Gagal mengubah izin file: {e}")
+                try:
+                    # Coba dengan subprocess
+                    subprocess.run(['chmod', '+x', ngrok_exe], check=False)
+                    print("Izin eksekusi diberikan dengan subprocess")
+                except Exception as e2:
+                    print(f"Peringatan: Gagal dengan subprocess: {e2}")
+        
+        # Coba cara alternatif jika ngrok sudah di PATH sistem
+        if not os.path.exists(ngrok_exe) or not os.access(ngrok_exe, os.X_OK):
+            print("Mencoba menggunakan ngrok dari PATH sistem...")
+            # Cek apakah ngrok ada di PATH
+            try:
+                result = subprocess.run(["which", "ngrok"] if os.name != 'nt' else ["where", "ngrok"], 
+                                     capture_output=True, text=True)
+                if result.returncode == 0 and result.stdout.strip():
+                    ngrok_exe = "ngrok"  # Gunakan ngrok dari PATH
+                    print(f"Menggunakan ngrok dari PATH: {result.stdout.strip()}")
+            except Exception as e:
+                print(f"Tidak dapat menemukan ngrok di PATH: {e}")
+        
         # Menjalankan Ngrok sebagai proses terpisah
+        print(f"Menjalankan: {ngrok_exe} http {port}")
         ngrok_process = subprocess.Popen(
-            ["./ngrok", "http", str(port)],
+            [ngrok_exe, "http", str(port)],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
         )
@@ -166,7 +240,7 @@ def run_ngrok(port):
                     # Jika belum ada tunnel setelah beberapa kali cek
                     if tunnel_check_count > 10:
                         print("\nTidak dapat membuat tunnel. Memeriksa status Ngrok...")
-                        subprocess.run(["./ngrok", "diagnose"])
+                        subprocess.run([ngrok_exe, "diagnose"])
                         print("\nMencoba ulang...")
                         tunnel_check_count = 0
                     time.sleep(CHECK_INTERVAL)

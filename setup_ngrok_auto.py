@@ -111,9 +111,21 @@ def extract_ngrok(file_name):
             ngrok_exe = "ngrok.exe"
         
         if os.path.exists(ngrok_exe):
-            # Membuat file dapat dieksekusi di Linux/macOS
+            # Membuat file dapat dieksekusi di Linux/macOS dengan izin penuh
             if platform.system().lower() != "windows":
-                os.chmod(ngrok_exe, 0o755)
+                try:
+                    # Memberikan izin eksekusi untuk semua (owner, group, others)
+                    os.chmod(ngrok_exe, 0o777)
+                    print(f"[SUCCESS] Izin eksekusi diberikan ke {ngrok_exe}")
+                except Exception as perm_error:
+                    print(f"[WARNING] Gagal mengubah izin file: {perm_error}")
+                    print("[INFO] Mencoba dengan subprocess...")
+                    try:
+                        subprocess.run(['chmod', '+x', ngrok_exe], check=True)
+                        print(f"[SUCCESS] Izin eksekusi diberikan dengan subprocess")
+                    except Exception as subproc_error:
+                        print(f"[WARNING] Gagal mengubah izin dengan subprocess: {subproc_error}")
+            
             print(f"[SUCCESS] Ngrok berhasil diekstrak: {ngrok_exe}")
         else:
             print(f"[ERROR] File Ngrok tidak ditemukan setelah ekstraksi")

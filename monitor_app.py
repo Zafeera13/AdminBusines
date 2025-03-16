@@ -203,14 +203,17 @@ def print_ngrok_status():
     
     print("\033[92mTunnel aktif:\033[0m")
     for tunnel in tunnel_info:
-        # Mengakses nilai dengan cara yang aman
-        proto = tunnel.get('proto', '').upper()
-        url = tunnel.get('url', '')
-        
-        if proto == "HTTPS":
-            print(f"\033[1;92m{proto}: {url}\033[0m")
-        else:
-            print(f"{proto}: {url}")
+        try:
+            # Mengakses nilai dengan cara yang aman
+            proto = str(tunnel['proto']).upper() if 'proto' in tunnel else 'UNKNOWN'
+            url = str(tunnel['url']) if 'url' in tunnel else 'URL tidak tersedia'
+            
+            if proto == "HTTPS":
+                print(f"\033[1;92m{proto}: {url}\033[0m")
+            else:
+                print(f"{proto}: {url}")
+        except Exception as e:
+            print(f"Error menampilkan info tunnel: {e}")
 
 def print_footer():
     """Mencetak footer dengan petunjuk"""
