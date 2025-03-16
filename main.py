@@ -710,13 +710,12 @@ class SistemManajemenPelanggan:
             if jenis in jenis_map:
                 ringkasan[jenis_map[jenis]] = total
             
-        # Hitung pendapatan kotor dan bersih
-        pendapatan_kotor = ringkasan['pendapatan'] + ringkasan['pendapatan_tagihan']
-        pendapatan_bersih = pendapatan_kotor - ringkasan['pengeluaran']
+        # Hitung total pendapatan dari pendapatan langsung dan tagihan
+        total_pendapatan = ringkasan['pendapatan'] + ringkasan['pendapatan_tagihan']
         
         # Hitung laba kotor dan bersih
-        laba_kotor = pendapatan_kotor
-        laba_bersih = pendapatan_bersih
+        laba_kotor = total_pendapatan
+        laba_bersih = total_pendapatan - ringkasan['pengeluaran']
         
         # Tambahkan ke ringkasan
         ringkasan['pendapatan_kotor'] = pendapatan_kotor
