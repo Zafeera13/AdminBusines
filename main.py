@@ -620,7 +620,7 @@ class SistemManajemenPelanggan:
             SELECT SUM(jumlah) as total
             FROM tagihan
             WHERE status_pembayaran = 'DIBAYAR'
-            AND substr(tanggal_pembayaran, 1, 7) = ?
+            AND substr(dibuat_pada, 1, 7) = ?
         """, (f"{tahun}-{bulan:02d}",))
         
         pendapatan_tagihan = cursor.fetchone()[0] or 0
