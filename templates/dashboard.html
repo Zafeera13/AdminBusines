@@ -196,8 +196,8 @@
                                     <td class="text-end">Rp {{ "{:,.0f}".format(tagihan['jumlah']) }}</td>
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm">
-                                            <a href="{{ url_for('edit_tagihan', tagihan_id=tagihan[0]) }}" class="btn btn-outline-primary" title="Edit"><i class="fas fa-edit"></i></a>
-                                            <button class="btn btn-outline-success" onclick="updateTagihanStatus({{ tagihan[0] }}, 'DIBAYAR')" title="Tandai Dibayar"><i class="fas fa-check"></i></button>
+                                            <a href="{{ url_for('edit_tagihan', tagihan_id=tagihan["id"]) }}" class="btn btn-outline-primary" title="Edit"><i class="fas fa-edit"></i></a>
+                                            <button class="btn btn-outline-success" onclick="updateTagihanStatus({{ tagihan["id"] }}, 'DIBAYAR')" title="Tandai Dibayar"><i class="fas fa-check"></i></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -263,8 +263,8 @@
                                     <td class="text-end">Rp {{ "{:,.0f}".format(tagihan['jumlah']) }}</td>
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm">
-                                            <a href="{{ url_for('edit_tagihan', tagihan_id=tagihan[0]) }}" class="btn btn-outline-primary" title="Edit"><i class="fas fa-edit"></i></a>
-                                            <button class="btn btn-outline-success" onclick="updateTagihanStatus({{ tagihan[0] }}, 'DIBAYAR')" title="Tandai Dibayar"><i class="fas fa-check"></i></button>
+                                            <a href="{{ url_for('edit_tagihan', tagihan_id=tagihan["id"]) }}" class="btn btn-outline-primary" title="Edit"><i class="fas fa-edit"></i></a>
+                                            <button class="btn btn-outline-success" onclick="updateTagihanStatus({{ tagihan["id"] }}, 'DIBAYAR')" title="Tandai Dibayar"><i class="fas fa-check"></i></button>
                                         </div>
                                     </td>
                                 </tr>
