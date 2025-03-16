@@ -620,7 +620,7 @@ class SistemManajemenPelanggan:
             SELECT SUM(jumlah) as total
             FROM tagihan
             WHERE status_pembayaran = 'DIBAYAR'
-            AND substr(dibuat_pada, 1, 7) = ?
+            AND substr(tanggal_pembayaran, 1, 7) = ?
         """, (f"{tahun}-{bulan:02d}",))
         
         pendapatan_tagihan = cursor.fetchone()[0] or 0
@@ -629,31 +629,53 @@ class SistemManajemenPelanggan:
         
         # Format hasil
         ringkasan = {
-            'MODAL_AWAL': 0,
-            'PENGELUARAN': 0,
-            'PENDAPATAN': 0,
-            'LAINNYA': 0,
-            'PENDAPATAN_TAGIHAN': pendapatan_tagihan
+            'modal_awal': 0,
+            'pengeluaran': 0,
+            'pendapatan': 0,
+            'lainnya': 0,
+            'pendapatan_tagihan': pendapatan_tagihan
+        }
+        
+        # Map dari jenis di database ke kunci di ringkasan
+        jenis_map = {
+            'MODAL_AWAL': 'modal_awal',
+            'PENGELUARAN': 'pengeluaran',
+            'PENDAPATAN': 'pendapatan',
+            'LAINNYA': 'lainnya'
         }
         
         for row in result:
             jenis = row[0]
             total = row[1] or 0
-            ringkasan[jenis] = total
+            if jenis in jenis_map:
+                ringkasan[jenis_map[jenis]] = total
             
         # Hitung pendapatan kotor dan bersih
-        pendapatan_kotor = ringkasan['PENDAPATAN'] + ringkasan['PENDAPATAN_TAGIHAN']
-        pendapatan_bersih = pendapatan_kotor - ringkasan['PENGELUARAN']
+        pendapatan_kotor = ringkasan['pendapatan'] + ringkasan['pendapatan_tagihan']
+        pendapatan_bersih = pendapatan_kotor - ringkasan['pengeluaran']
         
         # Hitung laba kotor dan bersih
         laba_kotor = pendapatan_kotor
         laba_bersih = pendapatan_bersih
         
         # Tambahkan ke ringkasan
-        ringkasan['PENDAPATAN_KOTOR'] = pendapatan_kotor
-        ringkasan['PENDAPATAN_BERSIH'] = pendapatan_bersih
-        ringkasan['LABA_KOTOR'] = laba_kotor
-        ringkasan['LABA_BERSIH'] = laba_bersih
+        ringkasan['pendapatan_kotor'] = pendapatan_kotor
+        ringkasan['pendapatan_bersih'] = pendapatan_bersih
+        ringkasan['laba_kotor'] = laba_kotor
+        ringkasan['laba_bersih'] = laba_bersih
+        
+        # Tambahkan rasio keuangan
+        if ringkasan['modal_awal'] > 0:
+            ringkasan['rasio_pendapatan_modal'] = pendapatan_kotor / ringkasan['modal_awal']
+        else:
+            ringkasan['rasio_pendapatan_modal'] = 0
+            
+        if pendapatan_kotor > 0:
+            ringkasan['rasio_pengeluaran_pendapatan'] = ringkasan['pengeluaran'] / pendapatan_kotor
+            ringkasan['margin_laba'] = laba_bersih / pendapatan_kotor
+        else:
+            ringkasan['rasio_pengeluaran_pendapatan'] = 0
+            ringkasan['margin_laba'] = 0
         
         return ringkasan
 
