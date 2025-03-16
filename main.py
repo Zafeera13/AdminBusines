@@ -714,8 +714,8 @@ class SistemManajemenPelanggan:
         total_pendapatan = ringkasan['pendapatan'] + ringkasan['pendapatan_tagihan']
         
         # Hitung laba kotor dan bersih
-        laba_kotor = total_pendapatan
-        laba_bersih = total_pendapatan - ringkasan['pengeluaran']
+        laba_kotor = ringkasan['pendapatan']
+        laba_bersih = ringkasan['pendapatan'] - ringkasan['pengeluaran']
         
         # Tambahkan ke ringkasan
         ringkasan['pendapatan_kotor'] = total_pendapatan
