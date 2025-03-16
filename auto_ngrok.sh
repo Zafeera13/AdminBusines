@@ -1,7 +1,7 @@
 #!/bin/bash
-# Script untuk menjalankan monitor aplikasi CusAkuntanID
+# Script untuk menjalankan Ngrok secara otomatis dengan token yang sudah dikonfigurasi
 
-echo "==== Monitor CusAkuntanID ====="
+echo "==== Auto Ngrok untuk CusAkuntanID ====="
 
 # Memeriksa apakah Python tersedia
 command -v python3 >/dev/null 2>&1 || { 
@@ -17,13 +17,17 @@ command -v python3 >/dev/null 2>&1 || {
 }
 
 # Memeriksa apakah script Python tersedia
-if [ ! -f "./monitor_app.py" ]; then
-    echo "ERROR: File monitor_app.py tidak ditemukan."
+if [ ! -f "./auto_ngrok.py" ]; then
+    echo "ERROR: File auto_ngrok.py tidak ditemukan."
+    echo "Silakan download ulang script atau buat file dengan nama auto_ngrok.py"
     exit 1
 fi
 
 # Memastikan script Python dapat dieksekusi
-chmod +x monitor_app.py
+chmod +x auto_ngrok.py
+
+# Menentukan port
+PORT=${1:-5000}
 
 # Aktifkan virtualenv jika ada
 if [ -d "venv" ]; then
@@ -32,5 +36,5 @@ if [ -d "venv" ]; then
 fi
 
 # Jalankan script Python
-echo "Memulai monitoring..."
-$PYTHON_CMD monitor_app.py
+echo "Menjalankan Auto Ngrok..."
+$PYTHON_CMD auto_ngrok.py $PORT

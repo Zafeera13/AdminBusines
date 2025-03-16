@@ -38,6 +38,21 @@
 2. Aplikasi sekarang berjalan pada IP lokal yang ditampilkan di terminal
 
 ### 4. Akses Jarak Jauh dengan Ngrok
+Ada dua cara untuk menjalankan Ngrok:
+
+#### Metode 1: Auto Ngrok (Direkomendasikan)
+1. Buka terminal Termux baru (swipe dari kiri untuk menu)
+2. Jalankan Auto Ngrok dengan token yang sudah terkonfigurasi:
+   ```
+   cd ~/storage/shared/CusAkuntanID
+   ./auto_ngrok.sh
+   ```
+   (Script ini akan secara otomatis mengkonfigurasi dan menjalankan Ngrok)
+3. URL HTTPS untuk akses jarak jauh akan ditampilkan dengan warna hijau
+4. Salin URL tersebut untuk mengakses aplikasi dari perangkat mana saja
+5. Token Ngrok sudah diatur secara otomatis, jadi tidak perlu mengkonfigurasi lagi
+
+#### Metode 2: Ngrok Manual
 1. Buka terminal Termux baru (swipe dari kiri untuk menu)
 2. Jalankan Ngrok melalui script Python:
    ```
