@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Error - Sistem Manajemen Pelanggan{% endblock %}
+
+{% block content %}
+<div class="container text-center py-5">
+    <div class="error-container">
+        <div class="error-icon mb-4">
+            {% if '404' in error %}
+                <i class="fas fa-map-signs fa-6x text-warning"></i>
+            {% elif '500' in error %}
+                <i class="fas fa-bug fa-6x text-danger"></i>
+            {% else %}
+                <i class="fas fa-exclamation-triangle fa-6x text-warning"></i>
+            {% endif %}
+        </div>
+        
+        <h1 class="display-4 mb-4">Oops! Terjadi Kesalahan</h1>
+        
+        <div class="alert alert-danger d-inline-block">
+            <h3>{{ error }}</h3>
+        </div>
+        
+        <p class="lead mt-4">
+            {% if '404' in error %}
+                Halaman yang Anda cari tidak ditemukan. Mungkin alamat URL salah atau halaman tersebut telah dipindahkan.
+            {% elif '500' in error %}
+                Terjadi kesalahan di server. Tim kami sudah diberitahu dan sedang bekerja untuk memperbaikinya.
+            {% else %}
+                Terjadi kesalahan. Silakan coba kembali dalam beberapa saat.
+            {% endif %}
+        </p>
+        
+        <div class="mt-5">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg me-3">
+                <i class="fas fa-home me-2"></i> Kembali ke Dashboard
+            </a>
+            
+            <button onclick="window.history.back()" class="btn btn-outline-secondary btn-lg">
+                <i class="fas fa-arrow-left me-2"></i> Kembali ke Halaman Sebelumnya
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

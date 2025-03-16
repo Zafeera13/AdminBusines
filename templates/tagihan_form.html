@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if mode == 'tambah' %}
+        Buat Tagihan Baru - Sistem Manajemen Pelanggan
+    {% else %}
+        Edit Tagihan - Sistem Manajemen Pelanggan
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">
+        {% if mode == 'tambah' %}
+            <i class="fas fa-file-invoice-dollar me-2"></i> Buat Tagihan Baru
+        {% else %}
+            <i class="fas fa-edit me-2"></i> Edit Tagihan
+        {% endif %}
+    </h1>
+    
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                {% if mode == 'tambah' %}
+                    <i class="fas fa-plus-circle me-2"></i> Form Tambah Tagihan
+                {% else %}
+                    <i class="fas fa-edit me-2"></i> Form Edit Tagihan
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" id="tagihanForm">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="pelanggan_id" class="form-label">Pelanggan <span class="text-danger">*</span></label>
+                        <select class="form-select" id="pelanggan_id" name="pelanggan_id" {% if mode == 'edit' %}disabled{% endif %} required>
+                            <option value="">-- Pilih Pelanggan --</option>
+                            {% for p in pelanggan_list %}
+                                <option value="{{ p[0] }}" {% if mode == 'edit' and tagihan.pelanggan_id == p[0] %}selected{% endif %} 
+                                    {% if request.args.get('pelanggan_id') and request.args.get('pelanggan_id')|int == p[0] %}selected{% endif %}>
+                                    {{ p[1] }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if mode == 'edit' %}
+                            <input type="hidden" name="pelanggan_id" value="{{ tagihan.pelanggan_id }}">
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="jumlah" class="form-label">Jumlah (Rp) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text">Rp</span>
+                            <input type="text" class="form-control" id="jumlah" name="jumlah" 
+                                   data-type="currency" 
+                                   value="{{ "{:,.0f}".format(tagihan.jumlah) if tagihan else '' }}" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="deskripsi" class="form-label">Deskripsi</label>
+                    <textarea class="form-control" id="deskripsi" name="deskripsi" rows="3">{{ tagihan.deskripsi if tagihan else '' }}</textarea>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="tanggal_jatuh_tempo" class="form-label">Tanggal Jatuh Tempo <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="tanggal_jatuh_tempo" name="tanggal_jatuh_tempo" 
+                               value="{{ tagihan.tanggal_jatuh_tempo if tagihan else '' }}" data-default="today" required>
+                    </div>
+                    
+                    {% if mode == 'edit' %}
+                    <div class="col-md-6 mb-3">
+                        <label for="status_pembayaran" class="form-label">Status Pembayaran</label>
+                        <select class="form-select" id="status_pembayaran" name="status_pembayaran">
+                            <option value="BELUM DIBAYAR" {% if tagihan.status_pembayaran == 'BELUM DIBAYAR' %}selected{% endif %}>BELUM DIBAYAR</option>
+                            <option value="DIBAYAR" {% if tagihan.status_pembayaran == 'DIBAYAR' %}selected{% endif %}>DIBAYAR</option>
+                        </select>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-between mt-3">
+                    <a href="{{ url_for('tagihan_list') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i> Kembali
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i> 
+                        {% if mode == 'tambah' %}
+                            Simpan Tagihan
+                        {% else %}
+                            Update Tagihan
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set default date if creating new invoice
+        if ('{{ mode }}' === 'tambah') {
+            const dueDateField = document.getElementById('tanggal_jatuh_tempo');
+            if (!dueDateField.value) {
+                // Set to 14 days from now
+                const today = new Date();
+                const futureDate = new Date(today);
+                futureDate.setDate(today.getDate() + 14);
+                
+                const dd = String(futureDate.getDate()).padStart(2, '0');
+                const mm = String(futureDate.getMonth() + 1).padStart(2, '0');
+                const yyyy = futureDate.getFullYear();
+                
+                dueDateField.value = yyyy + '-' + mm + '-' + dd;
+            }
+        }
+        
+        // Format currency input
+        const jumlahInput = document.getElementById('jumlah');
+        jumlahInput.addEventListener('input', function(e) {
+            // Remove non-numeric characters
+            let value = this.value.replace(/[^0-9]/g, '');
+            
+            // Format with thousand separator
+            if (value.length > 0) {
+                value = parseInt(value, 10).toLocaleString('id-ID');
+            }
+            
+            this.value = value;
+        });
+        
+        // Form validation
+        document.getElementById('tagihanForm').addEventListener('submit', function(e) {
+            const pelangganId = document.getElementById('pelanggan_id').value;
+            const jumlah = document.getElementById('jumlah').value;
+            const tanggalJatuhTempo = document.getElementById('tanggal_jatuh_tempo').value;
+            
+            if (!pelangganId) {
+                e.preventDefault();
+                alert('Silakan pilih pelanggan!');
+                return false;
+            }
+            
+            if (!jumlah) {
+                e.preventDefault();
+                alert('Jumlah tagihan harus diisi!');
+                return false;
+            }
+            
+            if (!tanggalJatuhTempo) {
+                e.preventDefault();
+                alert('Tanggal jatuh tempo harus diisi!');
+                return false;
+            }
+            
+            // Convert formatted currency back to number before submit
+            const numericValue = jumlah.replace(/\./g, '');
+            jumlahInput.value = numericValue;
+        });
+    });
+</script>
+{% endblock %}

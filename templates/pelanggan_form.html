@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if mode == 'tambah' %}
+        Tambah Pelanggan Baru - Sistem Manajemen Pelanggan
+    {% else %}
+        Edit Pelanggan - Sistem Manajemen Pelanggan
+    {% endif %}
+{% endblock %}
+
+{% block head %}
+    <!-- Leaflet Maps CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">
+        {% if mode == 'tambah' %}
+            <i class="fas fa-user-plus me-2"></i> Tambah Pelanggan Baru
+        {% else %}
+            <i class="fas fa-user-edit me-2"></i> Edit Pelanggan
+        {% endif %}
+    </h1>
+    
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                {% if mode == 'tambah' %}
+                    <i class="fas fa-plus me-2"></i> Form Tambah Pelanggan
+                {% else %}
+                    <i class="fas fa-edit me-2"></i> Form Edit Pelanggan
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" id="pelangganForm">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="nama" class="form-label">Nama Pelanggan <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="nama" name="nama" 
+                                   value="{{ pelanggan.nama if pelanggan else '' }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="telepon" class="form-label">Nomor Telepon</label>
+                            <input type="tel" class="form-control" id="telepon" name="telepon" 
+                                   value="{{ pelanggan.telepon if pelanggan else '' }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ pelanggan.email if pelanggan else '' }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="alamat" class="form-label">Alamat</label>
+                            <textarea class="form-control" id="alamat" name="alamat" rows="3">{{ pelanggan.alamat if pelanggan else '' }}</textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Lokasi (Opsional)</label>
+                            <div id="map" style="height: 300px;"></div>
+                            <small class="form-text text-muted">Klik pada peta untuk menandai lokasi atau cari alamat di bawah</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="searchAddress" placeholder="Cari alamat...">
+                                <button class="btn btn-primary" type="button" id="searchBtn">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="latitude" class="form-label">Latitude</label>
+                                <input type="text" class="form-control" id="latitude" name="latitude" 
+                                       value="{{ pelanggan.latitude if pelanggan else '0' }}" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="longitude" class="form-label">Longitude</label>
+                                <input type="text" class="form-control" id="longitude" name="longitude" 
+                                       value="{{ pelanggan.longitude if pelanggan else '0' }}" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-3">
+                    <a href="{{ url_for('pelanggan_list') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i> Kembali
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i> 
+                        {% if mode == 'tambah' %}
+                            Simpan Pelanggan
+                        {% else %}
+                            Update Pelanggan
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Leaflet Maps JS -->
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize map
+        const map = L.map('map').setView([-2.5489, 118.0149], 5); // Indonesia
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        let marker;
+        
+        // Set marker if coordinates exist
+        const latitude = parseFloat(document.getElementById('latitude').value) || 0;
+        const longitude = parseFloat(document.getElementById('longitude').value) || 0;
+        
+        if (latitude !== 0 && longitude !== 0) {
+            marker = L.marker([latitude, longitude]).addTo(map);
+            map.setView([latitude, longitude], 15);
+        }
+        
+        // Add marker on map click
+        map.on('click', function(e) {
+            if (marker) {
+                map.removeLayer(marker);
+            }
+            
+            marker = L.marker(e.latlng).addTo(map);
+            document.getElementById('latitude').value = e.latlng.lat.toFixed(6);
+            document.getElementById('longitude').value = e.latlng.lng.toFixed(6);
+        });
+        
+        // Search address functionality
+        document.getElementById('searchBtn').addEventListener('click', function() {
+            const address = document.getElementById('searchAddress').value;
+            
+            if (!address) return;
+            
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        const lat = parseFloat(data[0].lat);
+                        const lng = parseFloat(data[0].lon);
+                        
+                        if (marker) {
+                            map.removeLayer(marker);
+                        }
+                        
+                        marker = L.marker([lat, lng]).addTo(map);
+                        map.setView([lat, lng], 15);
+                        
+                        document.getElementById('latitude').value = lat.toFixed(6);
+                        document.getElementById('longitude').value = lng.toFixed(6);
+                    } else {
+                        alert('Lokasi tidak ditemukan. Coba lagi dengan kata kunci yang berbeda.');
+                    }
+                })
+                .catch(err => {
+                    console.error('Error searching address:', err);
+                    alert('Terjadi kesalahan saat mencari alamat.');
+                });
+        });
+        
+        // Submit on Enter key in search box
+        document.getElementById('searchAddress').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('searchBtn').click();
+            }
+        });
+        
+        // Form validation
+        document.getElementById('pelangganForm').addEventListener('submit', function(e) {
+            const nama = document.getElementById('nama').value.trim();
+            
+            if (!nama) {
+                e.preventDefault();
+                alert('Nama pelanggan harus diisi!');
+                return false;
+            }
+        });
+    });
+</script>
+{% endblock %}

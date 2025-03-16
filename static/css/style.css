@@ -1,0 +1,126 @@
+/* Custom styles for CusAkuntanID application */
+
+/* Sidebar styles */
+.wrapper {
+    display: flex;
+    width: 100%;
+    align-items: stretch;
+}
+
+#sidebar {
+    min-width: 250px;
+    max-width: 250px;
+    min-height: 100vh;
+    transition: all 0.3s;
+}
+
+#sidebar.active {
+    margin-left: -250px;
+}
+
+#sidebar .sidebar-header {
+    padding: 20px;
+}
+
+#sidebar ul.components {
+    padding: 20px 0;
+}
+
+#sidebar ul p {
+    padding: 10px;
+}
+
+#sidebar ul li a {
+    padding: 10px 20px;
+    display: block;
+    color: #eeeeee;
+    transition: all 0.3s;
+    text-decoration: none;
+}
+
+#sidebar ul li a:hover {
+    background: #212529;
+}
+
+#sidebar ul li.active > a {
+    background: #0d6efd;
+    color: #fff;
+}
+
+/* Content styles */
+#content {
+    width: 100%;
+    min-height: 100vh;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+}
+
+.no-sidebar {
+    margin-left: 0 !important;
+}
+
+#content.no-sidebar {
+    margin-left: 0;
+}
+
+/* For small screens */
+@media (max-width: 768px) {
+    #sidebar {
+        margin-left: -250px;
+    }
+    #sidebar.active {
+        margin-left: 0;
+    }
+}
+
+/* Footer styles */
+.footer {
+    margin-top: auto;
+    padding: 20px 0;
+}
+
+/* User avatar styles */
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+}
+
+.sidebar-user-info {
+    margin-bottom: 10px;
+}
+
+/* Cards & Containers */
+.card {
+    margin-bottom: 20px;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+    border-top-left-radius: 0.5rem !important;
+    border-top-right-radius: 0.5rem !important;
+}
+
+/* Form controls */
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Buttons spacing */
+.btn + .btn {
+    margin-left: 5px;
+}
+
+/* Table responsiveness and spacing */
+.table th, .table td {
+    vertical-align: middle;
+}
+
+/* Status badge customization */
+.badge.bg-success, .badge.bg-danger, .badge.bg-info, .badge.bg-warning {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}

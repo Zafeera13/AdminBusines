@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Profil - Sistem Manajemen Pelanggan{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4"><i class="fas fa-user me-2"></i> Profil Saya</h1>
+    
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card text-center">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Informasi Akun</h5>
+                </div>
+                <div class="card-body">
+                    <div class="user-avatar bg-primary text-white rounded-circle mx-auto d-flex justify-content-center align-items-center mb-3" style="width: 100px; height: 100px; font-size: 40px;">
+                        <span>{{ user[1][0].upper() }}</span>
+                    </div>
+                    <h4>{{ user[2] or user[1] }}</h4>
+                    <p class="text-muted mb-2">{{ user[1] }}</p>
+                    <span class="badge bg-{{ 'danger' if user[4] == 'admin' else 'info' }}">{{ user[4] }}</span>
+                    <hr>
+                    <div class="text-start">
+                        <p><strong><i class="fas fa-envelope me-2"></i> Email:</strong> {{ user[3] or 'Belum diatur' }}</p>
+                        <p><strong><i class="fas fa-calendar-alt me-2"></i> Dibuat pada:</strong> {{ user[5] }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-edit me-2"></i> Update Profil</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('update_profile') }}" id="profileForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" value="{{ user[1] }}" readonly>
+                            <div class="form-text text-muted">Username tidak dapat diubah</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="nama_lengkap" class="form-label">Nama Lengkap</label>
+                            <input type="text" class="form-control" id="nama_lengkap" name="nama_lengkap" value="{{ user[2] or '' }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ user[3] or '' }}">
+                        </div>
+                        
+                        <hr>
+                        <h5>Ubah Password</h5>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password Baru</label>
+                            <input type="password" class="form-control" id="password" name="password">
+                            <div class="form-text text-muted">Biarkan kosong jika tidak ingin mengubah password</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">Konfirmasi Password Baru</label>
+                            <input type="password" class="form-control" id="confirm_password">
+                        </div>
+                        
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i> Simpan Perubahan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('profileForm').addEventListener('submit', function(e) {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+        
+        if (password) {
+            if (password.length < 6) {
+                e.preventDefault();
+                alert('Password baru harus minimal 6 karakter!');
+                return false;
+            }
+            
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                alert('Password baru dan konfirmasi password tidak sama!');
+                return false;
+            }
+        }
+    });
+</script>
+{% endblock %}

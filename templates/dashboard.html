@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Sistem Manajemen Pelanggan{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</h1>
+    
+    <div class="row">
+        <!-- Pelanggan Card -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Total Pelanggan</h5>
+                            <h2 class="display-4">{{ pelanggan_count }}</h2>
+                        </div>
+                        <i class="fas fa-users fa-3x"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <span>Lihat detail</span>
+                    <a href="{{ url_for('pelanggan_list') }}" class="text-white"><i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tagihan Belum Dibayar Card -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card bg-danger text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Belum Dibayar</h5>
+                            <h2 class="display-4">{{ tagihan_stats.get('BELUM DIBAYAR', {}).get('jumlah', 0) }}</h2>
+                        </div>
+                        <i class="fas fa-file-invoice fa-3x"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <span>Total: Rp {{ "{:,.0f}".format(tagihan_stats.get('BELUM DIBAYAR', {}).get('total', 0)) }}</span>
+                    <a href="{{ url_for('tagihan_list') }}" class="text-white"><i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tagihan Sudah Dibayar Card -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Sudah Dibayar</h5>
+                            <h2 class="display-4">{{ tagihan_stats.get('DIBAYAR', {}).get('jumlah', 0) }}</h2>
+                        </div>
+                        <i class="fas fa-money-bill-wave fa-3x"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <span>Total: Rp {{ "{:,.0f}".format(tagihan_stats.get('DIBAYAR', {}).get('total', 0)) }}</span>
+                    <a href="{{ url_for('tagihan_list') }}" class="text-white"><i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Users Card (Admin Only) -->
+        {% if is_admin %}
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Total Pengguna</h5>
+                            <h2 class="display-4">{{ users_count }}</h2>
+                        </div>
+                        <i class="fas fa-user-cog fa-3x"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <span>Lihat detail</span>
+                    <a href="{{ url_for('user_list') }}" class="text-white"><i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Replacement for non-admin -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card bg-secondary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Profil Saya</h5>
+                            <p class="mb-0">{{ session.user.nama_lengkap or session.user.username }}</p>
+                        </div>
+                        <i class="fas fa-user fa-3x"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <span>Lihat profil</span>
+                    <a href="{{ url_for('profile') }}" class="text-white"><i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="row">
+        <!-- Tagihan Overview -->
+        <div class="col-md-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i> Ikhtisar Tagihan</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-6">
+                            <div class="bg-danger text-white p-3 rounded mb-3">
+                                <h5>Belum Dibayar</h5>
+                                <h3>Rp {{ "{:,.0f}".format(tagihan_stats.get('BELUM DIBAYAR', {}).get('total', 0)) }}</h3>
+                                <p>{{ tagihan_stats.get('BELUM DIBAYAR', {}).get('jumlah', 0) }} tagihan</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="bg-success text-white p-3 rounded mb-3">
+                                <h5>Sudah Dibayar</h5>
+                                <h3>Rp {{ "{:,.0f}".format(tagihan_stats.get('DIBAYAR', {}).get('total', 0)) }}</h3>
+                                <p>{{ tagihan_stats.get('DIBAYAR', {}).get('jumlah', 0) }} tagihan</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <canvas id="tagihanChart" width="100%" height="50"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2"></i> Aksi Cepat</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-3">
+                        <a href="{{ url_for('tambah_pelanggan') }}" class="btn btn-primary">
+                            <i class="fas fa-user-plus me-2"></i> Tambah Pelanggan
+                        </a>
+                        <a href="{{ url_for('tambah_tagihan') }}" class="btn btn-success">
+                            <i class="fas fa-file-invoice-dollar me-2"></i> Buat Tagihan
+                        </a>
+                        <a href="{{ url_for('tagihan_list') }}" class="btn btn-info">
+                            <i class="fas fa-clipboard-list me-2"></i> Lihat Semua Tagihan
+                        </a>
+                        <a href="{{ url_for('profile') }}" class="btn btn-secondary">
+                            <i class="fas fa-user-cog me-2"></i> Pengaturan Profil
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('tagihanChart').getContext('2d');
+        
+        // Data from Jinja template
+        const belumDibayar = {{ tagihan_stats.get('BELUM DIBAYAR', {}).get('total', 0) }};
+        const dibayar = {{ tagihan_stats.get('DIBAYAR', {}).get('total', 0) }};
+        
+        const chart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Belum Dibayar', 'Sudah Dibayar'],
+                datasets: [{
+                    label: 'Tagihan',
+                    data: [belumDibayar, dibayar],
+                    backgroundColor: [
+                        'rgba(220, 53, 69, 0.7)', // danger
+                        'rgba(40, 167, 69, 0.7)'  // success
+                    ],
+                    borderColor: [
+                        'rgba(220, 53, 69, 1)',
+                        'rgba(40, 167, 69, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                let value = context.raw;
+                                return label + ': Rp ' + value.toLocaleString('id-ID');
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
