@@ -434,6 +434,35 @@ class SistemManajemenPelanggan:
         hasil = cursor.fetchall()
         conn.close()
         return hasil
+        
+    def dapatkan_tagihan_jatuh_tempo_hari_ini(self, user_id=None):
+        """Dapatkan tagihan yang jatuh tempo hari ini"""
+        tanggal_hari_ini = datetime.datetime.now().strftime("%Y-%m-%d")
+        
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        if user_id is not None:
+            # Dapatkan tagihan jatuh tempo hari ini untuk pelanggan yang dimiliki user
+            cursor.execute("""
+                SELECT t.*, p.nama as pelanggan_nama 
+                FROM tagihan t 
+                JOIN pelanggan p ON t.pelanggan_id = p.id 
+                WHERE p.user_id = ? AND t.tanggal_jatuh_tempo = ? AND t.status_pembayaran = 'BELUM DIBAYAR'
+                ORDER BY p.nama
+            """, (user_id, tanggal_hari_ini))
+        else:
+            cursor.execute("""
+                SELECT t.*, p.nama as pelanggan_nama 
+                FROM tagihan t 
+                JOIN pelanggan p ON t.pelanggan_id = p.id 
+                WHERE t.tanggal_jatuh_tempo = ? AND t.status_pembayaran = 'BELUM DIBAYAR'
+                ORDER BY p.nama
+            """, (tanggal_hari_ini,))
+            
+        hasil = cursor.fetchall()
+        conn.close()
+        return hasil
 
     def dapatkan_statistik_tagihan(self, user_id=None):
         conn = self.get_connection()
