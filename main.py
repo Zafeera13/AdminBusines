@@ -718,20 +718,23 @@ class SistemManajemenPelanggan:
         laba_bersih = total_pendapatan - ringkasan['pengeluaran']
         
         # Tambahkan ke ringkasan
-        ringkasan['pendapatan_kotor'] = pendapatan_kotor
-        ringkasan['pendapatan_bersih'] = pendapatan_bersih
+        ringkasan['pendapatan_kotor'] = total_pendapatan
+        ringkasan['pendapatan_bersih'] = total_pendapatan
         ringkasan['laba_kotor'] = laba_kotor
         ringkasan['laba_bersih'] = laba_bersih
         
+        # Hitung CASH PERUSAHAAN (modal awal - pengeluaran + laba bersih)
+        ringkasan['cash_perusahaan'] = ringkasan['modal_awal'] - ringkasan['pengeluaran'] + laba_bersih
+        
         # Tambahkan rasio keuangan
         if ringkasan['modal_awal'] > 0:
-            ringkasan['rasio_pendapatan_modal'] = pendapatan_kotor / ringkasan['modal_awal']
+            ringkasan['rasio_pendapatan_modal'] = total_pendapatan / ringkasan['modal_awal']
         else:
             ringkasan['rasio_pendapatan_modal'] = 0
             
-        if pendapatan_kotor > 0:
-            ringkasan['rasio_pengeluaran_pendapatan'] = ringkasan['pengeluaran'] / pendapatan_kotor
-            ringkasan['margin_laba'] = laba_bersih / pendapatan_kotor
+        if total_pendapatan > 0:
+            ringkasan['rasio_pengeluaran_pendapatan'] = ringkasan['pengeluaran'] / total_pendapatan
+            ringkasan['margin_laba'] = laba_bersih / total_pendapatan
         else:
             ringkasan['rasio_pengeluaran_pendapatan'] = 0
             ringkasan['margin_laba'] = 0

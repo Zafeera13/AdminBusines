@@ -61,6 +61,19 @@
     </div>
 </div>
 
+<!-- CASH PERUSAHAAN -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card bg-dark">
+            <div class="card-body text-center">
+                <h5 class="card-title text-warning">CASH PERUSAHAAN</h5>
+                <h3 class="card-text">Rp {{ "{:,.0f}".format(ringkasan.get('cash_perusahaan', 0)).replace(',', '.') }}</h3>
+                <small class="text-muted">Modal Awal - Pengeluaran + Laba Bersih</small>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Tabel dan Form -->
 <div class="row">
     <!-- Tabel Transaksi -->
@@ -294,26 +307,29 @@
         const ctx = document.getElementById('keuanganChart').getContext('2d');
         
         const chartData = {
-            labels: ['Modal Awal', 'Pendapatan', 'Pengeluaran', 'Laba Bersih'],
+            labels: ['Modal Awal', 'Pendapatan', 'Pengeluaran', 'Laba Bersih', 'Cash Perusahaan'],
             datasets: [{
                 label: 'Statistik Keuangan (Rp)',
                 data: [
                     {{ ringkasan.get('modal_awal', 0) }},
                     {{ ringkasan.get('pendapatan', 0) }},
                     {{ ringkasan.get('pengeluaran', 0) }},
-                    {{ ringkasan.get('laba_bersih', 0) }}
+                    {{ ringkasan.get('laba_bersih', 0) }},
+                    {{ ringkasan.get('cash_perusahaan', 0) }}
                 ],
                 backgroundColor: [
                     'rgba(54, 162, 235, 0.5)',
                     'rgba(75, 192, 192, 0.5)',
                     'rgba(255, 99, 132, 0.5)',
-                    'rgba(153, 102, 255, 0.5)'
+                    'rgba(153, 102, 255, 0.5)',
+                    'rgba(255, 206, 86, 0.5)'
                 ],
                 borderColor: [
                     'rgba(54, 162, 235, 1)',
                     'rgba(75, 192, 192, 1)',
                     'rgba(255, 99, 132, 1)',
-                    'rgba(153, 102, 255, 1)'
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 206, 86, 1)'
                 ],
                 borderWidth: 1
             }]
