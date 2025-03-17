@@ -1093,6 +1093,7 @@ def edit_pelanggan(pelanggan_id):
 
 @app.route('/pelanggan/hapus/<int:pelanggan_id>', methods=['POST'])
 @login_required
+@admin_required
 def hapus_pelanggan(pelanggan_id):
     pelanggan = sistem_manajemen.dapatkan_pelanggan(pelanggan_id)
     
@@ -1100,11 +1101,7 @@ def hapus_pelanggan(pelanggan_id):
         flash('Pelanggan tidak ditemukan', 'danger')
         return redirect(url_for('pelanggan_list'))
     
-    # Pemeriksaan akses: Admin atau pemilik pelanggan
-    if session['user']['level'] != 'admin' and pelanggan[8] != session['user']['id']:
-        flash('Anda tidak memiliki akses untuk menghapus pelanggan ini', 'danger')
-        return redirect(url_for('pelanggan_list'))
-    
+    # Pemilik pelanggan sudah tidak dapat menghapus, hanya admin yang bisa
     sistem_manajemen.hapus_pelanggan(pelanggan_id)
     flash('Pelanggan berhasil dihapus', 'success')
     return redirect(url_for('pelanggan_list'))
@@ -1288,25 +1285,15 @@ def edit_tagihan(tagihan_id):
 
 @app.route('/tagihan/hapus/<int:tagihan_id>', methods=['POST'])
 @login_required
+@admin_required
 def hapus_tagihan(tagihan_id):
-    user_id = session['user']['id']
-    is_admin = session['user']['level'] == 'admin'
-    
     tagihan = sistem_manajemen.dapatkan_tagihan(tagihan_id)
     
     if not tagihan:
         flash('Tagihan tidak ditemukan', 'danger')
         return redirect(url_for('tagihan_list'))
     
-    # Dapatkan pelanggan untuk pemeriksaan akses
-    pelanggan_id = tagihan[1]
-    pelanggan = sistem_manajemen.dapatkan_pelanggan(pelanggan_id)
-    
-    # Pemeriksaan akses: Admin atau pemilik pelanggan
-    if not is_admin and pelanggan[8] != user_id:
-        flash('Anda tidak memiliki akses untuk menghapus tagihan ini', 'danger')
-        return redirect(url_for('tagihan_list'))
-    
+    # Hanya admin yang dapat menghapus tagihan, tidak perlu pemeriksaan kepemilikan lagi
     sistem_manajemen.hapus_tagihan(tagihan_id)
     flash('Tagihan berhasil dihapus', 'success')
     return redirect(url_for('tagihan_list'))
