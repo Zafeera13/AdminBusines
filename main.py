@@ -523,7 +523,7 @@ class SistemManajemenPelanggan:
         conn.close()
         return hasil
         
-
+    
     def dapatkan_statistik_tagihan(self, user_id=None):
         conn = self.get_connection()
         cursor = conn.cursor()
@@ -568,7 +568,7 @@ class SistemManajemenPelanggan:
             
         return stats
         
-
+    
     # Fungsi Akuntansi
     def tambah_transaksi_akuntansi(self, jenis, jumlah, deskripsi="", tanggal=None, created_by=None):
         """
@@ -836,7 +836,8 @@ class SistemManajemenPelanggan:
         hasil = cursor.fetchall()
         conn.close()
         return hasil
-        
+    
+    
 
     def dapatkan_ringkasan_akuntansi(self, bulan=None, tahun=None):
         """
@@ -859,7 +860,7 @@ class SistemManajemenPelanggan:
             tanggal_akhir = f"{tahun+1}-01-01"
         else:
             tanggal_akhir = f"{tahun}-{bulan+1:02d}-01"
-            
+        
         conn = self.get_connection()
         cursor = conn.cursor()
         
@@ -875,7 +876,7 @@ class SistemManajemenPelanggan:
         
         # Dapatkan total tagihan dibayar dalam bulan ini
         cursor.execute("""
-            SELECT SUM(jumlah) as total
+            SELECT`SUM(jumlah) as total
             FROM tagihan
             WHERE status_pembayaran = 'DIBAYAR'
             AND substr(dibuat_pada, 1, 7) = ?
@@ -942,10 +943,10 @@ class SistemManajemenPelanggan:
     def dapatkan_tagihan_dibayar_hari_ini(self, user_id=None):
         """Dapatkan tagihan yang dibayar hari ini"""
         tanggal_hari_ini = datetime.datetime.now().strftime("%Y-%m-%d")
-
+        
         conn = self.get_connection()
         cursor = conn.cursor()
-
+        
         if user_id is not None:
             cursor.execute("""
                 SELECT COUNT(t.id) as jumlah_tagihan, COALESCE(SUM(t.jumlah), 0) as total_jumlah
@@ -962,23 +963,23 @@ class SistemManajemenPelanggan:
                 WHERE date(t.dibuat_pada) = ?
                 AND t.status_pembayaran = 'DIBAYAR'
             """, (tanggal_hari_ini,))
-
+        
         result = cursor.fetchone()
         conn.close()
-
+        
         return {
             'jumlah': result[0],
             'total': result[1] or 0
         }
-
+    
     def dapatkan_tagihan_dibayar_30_hari(self, user_id=None):
         """Dapatkan tagihan yang dibayar dalam 30 hari terakhir"""
         tiga_puluh_hari_lalu = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
         tanggal_hari_ini = datetime.datetime.now().strftime("%Y-%m-%d")
-
+        
         conn = self.get_connection()
         cursor = conn.cursor()
-
+        
         if user_id is not None:
             cursor.execute("""
                 SELECT COUNT(t.id) as jumlah_tagihan, COALESCE(SUM(t.jumlah), 0) as total_jumlah
@@ -995,15 +996,15 @@ class SistemManajemenPelanggan:
                 WHERE date(t.dibuat_pada) BETWEEN ? AND ?
                 AND t.status_pembayaran = 'DIBAYAR'
             """, (tiga_puluh_hari_lalu, tanggal_hari_ini))
-
+        
         result = cursor.fetchone()
         conn.close()
-
+        
         return {
             'jumlah': result[0],
             'total': result[1] or 0
         }
-
+    
     def hitung_total_tagihan_jatuh_tempo_hari_ini(self, user_id=None):
         """Hitung total tagihan yang jatuh tempo hari ini per user"""
         tanggal_hari_ini = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -1034,6 +1035,69 @@ class SistemManajemenPelanggan:
         hasil = cursor.fetchall()
         conn.close()
         return hasil
+    
+    def dapatkan_pengeluaran_hari_ini(self, user_id=None):
+        """Dapatkan total pengeluaran hari ini"""
+        tanggal_hari_ini = datetime.datetime.now().strftime("%Y-%m-%d")
+
+        conn = self.get_connection()
+        cursor = conn.cursor()
+
+        if user_id is not None:
+            cursor.execute("""
+                SELECT COUNT(id) as jumlah_transaksi, COALESCE(SUM(jumlah), 0) as total_jumlah
+                FROM akuntansi 
+                WHERE date(tanggal) = ?
+                AND jenis = 'PENGELUARAN'
+                AND created_by = ?
+            """, (tanggal_hari_ini, user_id))
+        else:
+            cursor.execute("""
+                SELECT COUNT(id) as jumlah_transaksi, COALESCE(SUM(jumlah), 0) as total_jumlah
+                FROM akuntansi 
+                WHERE date(tanggal) = ?
+                AND jenis = 'PENGELUARAN'
+            """, (tanggal_hari_ini,))
+
+        result = cursor.fetchone()
+        conn.close()
+
+        return {
+            'jumlah': result[0],
+            'total': result[1] or 0
+        }
+
+    def dapatkan_pengeluaran_30_hari(self, user_id=None):
+        """Dapatkan total pengeluaran 30 hari terakhir"""
+        tiga_puluh_hari_lalu = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
+        tanggal_hari_ini = datetime.datetime.now().strftime("%Y-%m-%d")
+
+        conn = self.get_connection()
+        cursor = conn.cursor()
+
+        if user_id is not None:
+            cursor.execute("""
+                SELECT COUNT(id) as jumlah_transaksi, COALESCE(SUM(jumlah), 0) as total_jumlah
+                FROM akuntansi 
+                WHERE date(tanggal) BETWEEN ? AND ?
+                AND jenis = 'PENGELUARAN'
+                AND created_by = ?
+            """, (tiga_puluh_hari_lalu, tanggal_hari_ini, user_id))
+        else:
+            cursor.execute("""
+                SELECT COUNT(id) as jumlah_transaksi, COALESCE(SUM(jumlah), 0) as total_jumlah
+                FROM akuntansi 
+                WHERE date(tanggal) BETWEEN ? AND ?
+                AND jenis = 'PENGELUARAN'
+            """, (tiga_puluh_hari_lalu, tanggal_hari_ini))
+
+        result = cursor.fetchone()
+        conn.close()
+
+        return {
+            'jumlah': result[0],
+            'total': result[1] or 0
+        }
 
 # Inisialisasi objek
 pengguna_manager = Pengguna()
@@ -1076,6 +1140,12 @@ def dashboard():
     tagihan_stats['DIBAYAR_HARI_INI'] = sistem_manajemen.dapatkan_tagihan_dibayar_hari_ini(user_id)
     tagihan_stats['DIBAYAR_30_HARI'] = sistem_manajemen.dapatkan_tagihan_dibayar_30_hari(user_id)
 
+    # Tambahkan statistik pengeluaran
+    pengeluaran_stats = {
+        'HARI_INI': sistem_manajemen.dapatkan_pengeluaran_hari_ini(user_id),
+        '30_HARI': sistem_manajemen.dapatkan_pengeluaran_30_hari(user_id)
+    }
+
     # Dapatkan data untuk tabel dan grafik
     tagihan_jatuh_tempo = sistem_manajemen.dapatkan_tagihan_jatuh_tempo_hari_ini(user_id)
     tagihan_terlambat = sistem_manajemen.dapatkan_tagihan_terlambat(user_id)
@@ -1087,6 +1157,7 @@ def dashboard():
 
     return render_template('dashboard.html',
                          tagihan_stats=tagihan_stats,
+                         pengeluaran_stats=pengeluaran_stats,
                          jumlah_pelanggan=jumlah_pelanggan,
                          tagihan_jatuh_tempo=tagihan_jatuh_tempo,
                          tagihan_terlambat=tagihan_terlambat,
@@ -1416,6 +1487,7 @@ def tagihan_list():
     
     return render_template('tagihan_list.html', tagihan=tagihan)
     
+    
 
 @app.route('/setoran')
 @app.route('/setoran/<status>')
@@ -1580,7 +1652,7 @@ def edit_tagihan(tagihan_id):
         flash('Tagihan tidak ditemukan', 'danger')
         return redirect(url_for('tagihan_list'))
     
-    # Dapatkan pelanggan untuk pemeriksaan akses
+    # Dapatkan pelanggan untuk pemeriksaanakses
     pelanggan_id = tagihan[1]
     pelanggan = sistem_manajemen.dapatkan_pelanggan(pelanggan_id)
     
