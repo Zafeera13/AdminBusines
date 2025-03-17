@@ -845,25 +845,25 @@ class SistemManajemenPelanggan:
         Jika bulan dan tahun tidak disediakan, berikan ringkasan untuk tahun ini
         """
         now = datetime.datetime.now()
-        
+
         if bulan is None:
             bulan = now.month
-            
+
         if tahun is None:
             tahun = now.year
-            
+
         # Format tanggal untuk query
         tanggal_mulai = f"{tahun}-{bulan:02d}-01"
-        
+
         # Hitung tanggal akhir (bulan + 1)
         if bulan == 12:
             tanggal_akhir = f"{tahun+1}-01-01"
         else:
             tanggal_akhir = f"{tahun}-{bulan+1:02d}-01"
-        
+
         conn = self.get_connection()
         cursor = conn.cursor()
-        
+
         # Dapatkan semua transaksi dalam rentang waktu
         cursor.execute("""
             SELECT jenis, SUM(jumlah) as total
@@ -871,21 +871,21 @@ class SistemManajemenPelanggan:
             WHERE tanggal >= ? AND tanggal < ?
             GROUP BY jenis
         """, (tanggal_mulai, tanggal_akhir))
-        
+
         result = cursor.fetchall()
-        
-        # Dapatkan total tagihan dibayar dalam bulan ini
+
+        # Dapatkantotal tagihan dibayar dalam bulan ini
         cursor.execute("""
-            SELECT`SUM(jumlah) as total
+            SELECT SUM(jumlah) as total
             FROM tagihan
             WHERE status_pembayaran = 'DIBAYAR'
             AND substr(dibuat_pada, 1, 7) = ?
         """, (f"{tahun}-{bulan:02d}",))
-        
+
         pendapatan_tagihan = cursor.fetchone()[0] or 0
-        
+
         conn.close()
-        
+
         # Format hasil
         ringkasan = {
             'modal_awal': 0,
@@ -894,7 +894,7 @@ class SistemManajemenPelanggan:
             'lainnya': 0,
             'pendapatan_tagihan': pendapatan_tagihan
         }
-        
+
         # Map dari jenis di database ke kunci di ringkasan
         jenis_map = {
             'MODAL_AWAL': 'modal_awal',
@@ -902,43 +902,44 @@ class SistemManajemenPelanggan:
             'PENDAPATAN': 'pendapatan',
             'LAINNYA': 'lainnya'
         }
-        
+
         for row in result:
             jenis = row[0]
             total = row[1] or 0
             if jenis in jenis_map:
                 ringkasan[jenis_map[jenis]] = total
-            
+
         # Hitung total pendapatan dari pendapatan langsung dan tagihan
         total_pendapatan = ringkasan['pendapatan'] + ringkasan['pendapatan_tagihan']
-        
+
         # Hitung laba kotor dan bersih
         laba_kotor = ringkasan['pendapatan']
         laba_bersih = ringkasan['pendapatan'] - ringkasan['pengeluaran']
-        
+
         # Tambahkan ke ringkasan
         ringkasan['pendapatan_kotor'] = total_pendapatan
         ringkasan['pendapatan_bersih'] = total_pendapatan
         ringkasan['laba_kotor'] = laba_kotor
         ringkasan['laba_bersih'] = laba_bersih
-        
+
         # Hitung CASH PERUSAHAAN (modal awal - pengeluaran + pendapatan)
         ringkasan['cash_perusahaan'] = ringkasan['modal_awal'] - ringkasan['pengeluaran'] + ringkasan['pendapatan']
-        
+
         # Tambahkan rasio keuangan
         if ringkasan['modal_awal'] > 0:
             ringkasan['rasio_pendapatan_modal'] = total_pendapatan / ringkasan['modal_awal']
         else:
             ringkasan['rasio_pendapatan_modal'] = 0
-            
+
         if total_pendapatan > 0:
             ringkasan['rasio_pengeluaran_pendapatan'] = ringkasan['pengeluaran'] / total_pendapatan
             ringkasan['margin_laba'] = laba_bersih / total_pendapatan
         else:
             ringkasan['rasio_pengeluaran_pendapatan'] = 0
             ringkasan['margin_laba'] = 0
-        
+
         return ringkasan
+
     
     def dapatkan_tagihan_dibayar_hari_ini(self, user_id=None):
         """Dapatkan tagihan yang dibayar hari ini"""
@@ -1653,7 +1654,7 @@ def edit_tagihan(tagihan_id):
         return redirect(url_for('tagihan_list'))
     
     # Dapatkan pelanggan untuk pemeriksaanakses
-    pelanggan_id = tagihan[1]
+    pelanggan_id= tagihan[1]
     pelanggan = sistem_manajemen.dapatkan_pelanggan(pelanggan_id)
     
     # Pemeriksaan akses: Admin atau pemilik pelanggan
