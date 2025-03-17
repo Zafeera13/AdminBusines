@@ -838,7 +838,6 @@ class SistemManajemenPelanggan:
         return hasil
     
     
-
     def dapatkan_ringkasan_akuntansi(self, bulan=None, tahun=None):
         """
         Dapatkan ringkasan akuntansi untuk bulan dan tahun tertentu
@@ -878,6 +877,7 @@ class SistemManajemenPelanggan:
         cursor.execute("""
             SELECT SUM(jumlah) as total
             FROM tagihan
+            ```python
             WHERE status_pembayaran = 'DIBAYAR'
             AND substr(dibuat_pada, 1, 7) = ?
         """, (f"{tahun}-{bulan:02d}",))
@@ -939,7 +939,6 @@ class SistemManajemenPelanggan:
             ringkasan['margin_laba'] = 0
 
         return ringkasan
-
     
     def dapatkan_tagihan_dibayar_hari_ini(self, user_id=None):
         """Dapatkan tagihan yang dibayar hari ini"""
@@ -1132,6 +1131,7 @@ def admin_required(f):
 @login_required
 def dashboard():
     user_id = None if session['user']['level'] == 'admin' else session['user']['id']
+    is_admin = session['user']['level'] == 'admin'
 
     # Dapatkan data untuk statistik
     pelanggan = sistem_manajemen.dapatkan_semua_pelanggan(user_id)
@@ -1148,22 +1148,51 @@ def dashboard():
     }
 
     # Dapatkan data untuk tabel dan grafik
-    tagihan_jatuh_tempo = sistem_manajemen.dapatkan_tagihan_jatuh_tempo_hari_ini(user_id)
-    tagihan_terlambat = sistem_manajemen.dapatkan_tagihan_terlambat(user_id)
+    raw_tagihan_jatuh_tempo = sistem_manajemen.dapatkan_tagihan_jatuh_tempo_hari_ini(user_id)
+    raw_tagihan_terlambat = sistem_manajemen.dapatkan_tagihan_terlambat(user_id)
+
+    # Konversi tuple ke dictionary
+    tagihan_jatuh_tempo = []
+    if raw_tagihan_jatuh_tempo:
+        for t in raw_tagihan_jatuh_tempo:
+            tagihan_jatuh_tempo.append({
+                'id': t[0],
+                'pelanggan_id': t[1],
+                'jumlah': t[2],
+                'deskripsi': t[3],
+                'tanggal_jatuh_tempo': t[4],
+                'status_pembayaran': t[5],
+                'dibuat_pada': t[6],
+                'pelanggan_nama': t[-1] if len(t) > 7 else ''
+            })
+
+    tagihan_terlambat = []
+    if raw_tagihan_terlambat:
+        for t in raw_tagihan_terlambat:
+            tagihan_terlambat.append({
+                'id': t[0],
+                'pelanggan_id': t[1],
+                'jumlah': t[2],
+                'deskripsi': t[3],
+                'tanggal_jatuh_tempo': t[4],
+                'status_pembayaran': t[5],
+                'dibuat_pada': t[6],
+                'pelanggan_nama': t[-2] if len(t) > 8 else '',
+                'hari_terlambat': t[-1] if len(t) > 8 else 0
+            })
 
     # Format data untuk tampilan
     jumlah_pelanggan = len(pelanggan) if pelanggan else 0
-    jumlah_tagihan_tempo = len(tagihan_jatuh_tempo) if tagihan_jatuh_tempo else 0
-    jumlah_tagihan_terlambat = len(tagihan_terlambat) if tagihan_terlambat else 0
+    users_count = len(pengguna_manager.get_all_users()) if is_admin else 1
 
     return render_template('dashboard.html',
                          tagihan_stats=tagihan_stats,
                          pengeluaran_stats=pengeluaran_stats,
-                         jumlah_pelanggan=jumlah_pelanggan,
+                         pelanggan_count=jumlah_pelanggan,
+                         users_count=users_count,
                          tagihan_jatuh_tempo=tagihan_jatuh_tempo,
                          tagihan_terlambat=tagihan_terlambat,
-                         jumlah_tagihan_tempo=jumlah_tagihan_tempo,
-                         jumlah_tagihan_terlambat=jumlah_tagihan_terlambat)
+                         is_admin=is_admin)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -1489,6 +1518,7 @@ def tagihan_list():
     return render_template('tagihan_list.html', tagihan=tagihan)
     
     
+    
 
 @app.route('/setoran')
 @app.route('/setoran/<status>')
@@ -1627,7 +1657,7 @@ def tambah_tagihan():
                 flash('Anda tidak memiliki akses ke pelanggan ini', 'danger')
                 return redirect(url_for('tagihan_list'))
         
-        tagihan_id = sistem_manajemen.tambah_tagihan(
+        tagihan_id = sistem_manajemen.tambahtagihan(
             int(pelanggan_id), jumlah_float, deskripsi, tanggal_jatuh_tempo
         )
         
