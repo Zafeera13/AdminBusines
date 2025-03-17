@@ -1870,9 +1870,27 @@ def akuntansi(tahun=None, bulan=None):
     ]
     years = range(2020, now.year + 2)
 
-    # Dapatkan data setoran
-    setoran_harian = sistem_manajemen.dapatkan_setoran_harian_per_user()
-    setoran_30_hari = sistem_manajemen.dapatkan_setoran_30_hari_per_user()
+    # Dapatkan dan format data setoran
+    setoran_harian_raw = sistem_manajemen.dapatkan_setoran_harian_per_user()
+    setoran_30_hari_raw = sistem_manajemen.dapatkan_setoran_30_hari_per_user()
+    
+    # Format data setoran harian
+    setoran_harian = []
+    for s in setoran_harian_raw:
+        setoran_harian.append({
+            'username': s[1],
+            'jumlah_setoran': s[2],
+            'total_jumlah': s[3]
+        })
+    
+    # Format data setoran 30 hari
+    setoran_30_hari = []
+    for s in setoran_30_hari_raw:
+        setoran_30_hari.append({
+            'username': s[1],
+            'jumlah_setoran': s[2],
+            'total_jumlah': s[3]
+        })
 
     return render_template(
         'akuntansi.html',
