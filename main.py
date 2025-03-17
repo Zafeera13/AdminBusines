@@ -522,6 +522,7 @@ class SistemManajemenPelanggan:
         hasil = cursor.fetchall()
         conn.close()
         return hasil
+        
 
     def dapatkan_statistik_tagihan(self, user_id=None):
         conn = self.get_connection()
@@ -567,6 +568,7 @@ class SistemManajemenPelanggan:
             
         return stats
         
+
     # Fungsi Akuntansi
     def tambah_transaksi_akuntansi(self, jenis, jumlah, deskripsi="", tanggal=None, created_by=None):
         """
@@ -834,6 +836,7 @@ class SistemManajemenPelanggan:
         hasil = cursor.fetchall()
         conn.close()
         return hasil
+        
 
     def dapatkan_ringkasan_akuntansi(self, bulan=None, tahun=None):
         """
@@ -935,6 +938,102 @@ class SistemManajemenPelanggan:
             ringkasan['margin_laba'] = 0
         
         return ringkasan
+    
+    def dapatkan_tagihan_dibayar_hari_ini(self, user_id=None):
+        """Dapatkan tagihan yang dibayar hari ini"""
+        tanggal_hari_ini = datetime.datetime.now().strftime("%Y-%m-%d")
+
+        conn = self.get_connection()
+        cursor = conn.cursor()
+
+        if user_id is not None:
+            cursor.execute("""
+                SELECT COUNT(t.id) as jumlah_tagihan, COALESCE(SUM(t.jumlah), 0) as total_jumlah
+                FROM tagihan t 
+                JOIN pelanggan p ON t.pelanggan_id = p.id 
+                WHERE p.user_id = ? 
+                AND date(t.dibuat_pada) = ?
+                AND t.status_pembayaran = 'DIBAYAR'
+            """, (user_id, tanggal_hari_ini))
+        else:
+            cursor.execute("""
+                SELECT COUNT(t.id) as jumlah_tagihan, COALESCE(SUM(t.jumlah), 0) as total_jumlah
+                FROM tagihan t 
+                WHERE date(t.dibuat_pada) = ?
+                AND t.status_pembayaran = 'DIBAYAR'
+            """, (tanggal_hari_ini,))
+
+        result = cursor.fetchone()
+        conn.close()
+
+        return {
+            'jumlah': result[0],
+            'total': result[1] or 0
+        }
+
+    def dapatkan_tagihan_dibayar_30_hari(self, user_id=None):
+        """Dapatkan tagihan yang dibayar dalam 30 hari terakhir"""
+        tiga_puluh_hari_lalu = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
+        tanggal_hari_ini = datetime.datetime.now().strftime("%Y-%m-%d")
+
+        conn = self.get_connection()
+        cursor = conn.cursor()
+
+        if user_id is not None:
+            cursor.execute("""
+                SELECT COUNT(t.id) as jumlah_tagihan, COALESCE(SUM(t.jumlah), 0) as total_jumlah
+                FROM tagihan t 
+                JOIN pelanggan p ON t.pelanggan_id = p.id 
+                WHERE p.user_id = ? 
+                AND date(t.dibuat_pada) BETWEEN ? AND ?
+                AND t.status_pembayaran = 'DIBAYAR'
+            """, (user_id, tiga_puluh_hari_lalu, tanggal_hari_ini))
+        else:
+            cursor.execute("""
+                SELECT COUNT(t.id) as jumlah_tagihan, COALESCE(SUM(t.jumlah), 0) as total_jumlah
+                FROM tagihan t 
+                WHERE date(t.dibuat_pada) BETWEEN ? AND ?
+                AND t.status_pembayaran = 'DIBAYAR'
+            """, (tiga_puluh_hari_lalu, tanggal_hari_ini))
+
+        result = cursor.fetchone()
+        conn.close()
+
+        return {
+            'jumlah': result[0],
+            'total': result[1] or 0
+        }
+
+    def hitung_total_tagihan_jatuh_tempo_hari_ini(self, user_id=None):
+        """Hitung total tagihan yang jatuh tempo hari ini per user"""
+        tanggal_hari_ini = datetime.datetime.now().strftime("%Y-%m-%d")
+        
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        if user_id is not None:
+            # Hitung total untuk satu user
+            cursor.execute("""
+                SELECT p.user_id, SUM(t.jumlah) as total_tagihan
+                FROM tagihan t 
+                JOIN pelanggan p ON t.pelanggan_id = p.id 
+                WHERE p.user_id = ? AND t.tanggal_jatuh_tempo = ? AND t.status_pembayaran = 'BELUM DIBAYAR'
+                GROUP BY p.user_id
+            """, (user_id, tanggal_hari_ini))
+        else:
+            # Hitung total untuk semua user
+            cursor.execute("""
+                SELECT p.user_id, SUM(t.jumlah) as total_tagihan, u.username
+                FROM tagihan t 
+                JOIN pelanggan p ON t.pelanggan_id = p.id 
+                JOIN pengguna u ON p.user_id = u.id
+                WHERE t.tanggal_jatuh_tempo = ? AND t.status_pembayaran = 'BELUM DIBAYAR'
+                GROUP BY p.user_id
+            """, (tanggal_hari_ini,))
+        
+        hasil = cursor.fetchall()
+        conn.close()
+        return hasil
 
 # Inisialisasi objek
 pengguna_manager = Pengguna()
@@ -965,8 +1064,34 @@ def admin_required(f):
 
 # Routes
 @app.route('/')
-def index():
-    return redirect(url_for('login'))
+@login_required
+def dashboard():
+    user_id = None if session['user']['level'] == 'admin' else session['user']['id']
+
+    # Dapatkan data untuk statistik
+    pelanggan = sistem_manajemen.dapatkan_semua_pelanggan(user_id)
+    tagihan_stats = sistem_manajemen.dapatkan_statistik_tagihan(user_id)
+
+    # Tambahkan statistik tagihan dibayar hari ini dan 30 hari terakhir
+    tagihan_stats['DIBAYAR_HARI_INI'] = sistem_manajemen.dapatkan_tagihan_dibayar_hari_ini(user_id)
+    tagihan_stats['DIBAYAR_30_HARI'] = sistem_manajemen.dapatkan_tagihan_dibayar_30_hari(user_id)
+
+    # Dapatkan data untuk tabel dan grafik
+    tagihan_jatuh_tempo = sistem_manajemen.dapatkan_tagihan_jatuh_tempo_hari_ini(user_id)
+    tagihan_terlambat = sistem_manajemen.dapatkan_tagihan_terlambat(user_id)
+
+    # Format data untuk tampilan
+    jumlah_pelanggan = len(pelanggan) if pelanggan else 0
+    jumlah_tagihan_tempo = len(tagihan_jatuh_tempo) if tagihan_jatuh_tempo else 0
+    jumlah_tagihan_terlambat = len(tagihan_terlambat) if tagihan_terlambat else 0
+
+    return render_template('dashboard.html',
+                         tagihan_stats=tagihan_stats,
+                         jumlah_pelanggan=jumlah_pelanggan,
+                         tagihan_jatuh_tempo=tagihan_jatuh_tempo,
+                         tagihan_terlambat=tagihan_terlambat,
+                         jumlah_tagihan_tempo=jumlah_tagihan_tempo,
+                         jumlah_tagihan_terlambat=jumlah_tagihan_terlambat)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -1032,62 +1157,6 @@ def register():
             flash(message, 'danger')
     
     return render_template('register.html')
-
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    user_id = session['user']['id']
-    is_admin = session['user']['level'] == 'admin'
-    
-    # Get statistics
-    if is_admin:
-        pelanggan_count = len(sistem_manajemen.dapatkan_semua_pelanggan())
-        users_count = len(pengguna_manager.get_all_users())
-        tagihan_stats = sistem_manajemen.dapatkan_statistik_tagihan()
-        tagihan_jatuh_tempo = sistem_manajemen.dapatkan_tagihan_jatuh_tempo_hari_ini()
-        tagihan_terlambat = sistem_manajemen.dapatkan_tagihan_terlambat()
-    else:
-        pelanggan_count = len(sistem_manajemen.dapatkan_semua_pelanggan(user_id))
-        users_count = 1  # Just current user
-        tagihan_stats = sistem_manajemen.dapatkan_statistik_tagihan(user_id)
-        tagihan_jatuh_tempo = sistem_manajemen.dapatkan_tagihan_jatuh_tempo_hari_ini(user_id)
-        tagihan_terlambat = sistem_manajemen.dapatkan_tagihan_terlambat(user_id)
-    
-    # Convert tuples to dictionaries
-    if tagihan_jatuh_tempo:
-        tagihan_jatuh_tempo = [{
-            'id': t[0],
-            'pelanggan_id': t[1],
-            'jumlah': t[2],
-            'deskripsi': t[3],
-            'tanggal_jatuh_tempo': t[4],
-            'status_pembayaran': t[5],
-            'dibuat_pada': t[6],
-            'pelanggan_nama': t.pelanggan_nama if hasattr(t, 'pelanggan_nama') else ''
-        } for t in tagihan_jatuh_tempo]
-    
-    if tagihan_terlambat:
-        tagihan_terlambat = [{
-            'id': t[0],
-            'pelanggan_id': t[1],
-            'jumlah': t[2],
-            'deskripsi': t[3],
-            'tanggal_jatuh_tempo': t[4],
-            'status_pembayaran': t[5],
-            'dibuat_pada': t[6],
-            'pelanggan_nama': t.pelanggan_nama if hasattr(t, 'pelanggan_nama') else '',
-            'hari_terlambat': t.hari_terlambat if hasattr(t, 'hari_terlambat') else 0
-        } for t in tagihan_terlambat]
-    
-    return render_template(
-        'dashboard.html',
-        pelanggan_count=pelanggan_count,
-        users_count=users_count,
-        tagihan_stats=tagihan_stats,
-        tagihan_jatuh_tempo=tagihan_jatuh_tempo,
-        tagihan_terlambat=tagihan_terlambat,
-        is_admin=is_admin
-    )
 
 @app.route('/users')
 @admin_required
@@ -1347,6 +1416,7 @@ def tagihan_list():
     
     return render_template('tagihan_list.html', tagihan=tagihan)
     
+
 @app.route('/setoran')
 @app.route('/setoran/<status>')
 @login_required

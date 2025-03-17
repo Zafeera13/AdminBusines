@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container">
     <h1 class="mb-4"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</h1>
-    
+
     <div class="row">
         <!-- Pelanggan Card -->
         <div class="col-md-6 col-lg-3 mb-4">
@@ -25,7 +25,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Tagihan Belum Dibayar Card -->
         <div class="col-md-6 col-lg-3 mb-4">
             <div class="card bg-danger text-white h-100">
@@ -44,7 +44,45 @@
                 </div>
             </div>
         </div>
-        
+
+        <!-- Tagihan Dibayar Hari Ini Card -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Dibayar Hari Ini</h5>
+                            <h2 class="display-4">{{ tagihan_stats.get('DIBAYAR_HARI_INI', {}).get('jumlah', 0) }}</h2>
+                        </div>
+                        <i class="fas fa-calendar-check fa-3x"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <span>Total: Rp {{ "{:,.0f}".format(tagihan_stats.get('DIBAYAR_HARI_INI', {}).get('total', 0)) }}</span>
+                    <a href="{{ url_for('tagihan_list') }}" class="text-white"><i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tagihan Dibayar 30 Hari Card -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Dibayar 30 Hari</h5>
+                            <h2 class="display-4">{{ tagihan_stats.get('DIBAYAR_30_HARI', {}).get('jumlah', 0) }}</h2>
+                        </div>
+                        <i class="fas fa-calendar-alt fa-3x"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <span>Total: Rp {{ "{:,.0f}".format(tagihan_stats.get('DIBAYAR_30_HARI', {}).get('total', 0)) }}</span>
+                    <a href="{{ url_for('tagihan_list') }}" class="text-white"><i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+        </div>
+
         <!-- Tagihan Sudah Dibayar Card -->
         <div class="col-md-6 col-lg-3 mb-4">
             <div class="card bg-success text-white h-100">
