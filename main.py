@@ -579,7 +579,7 @@ class SistemManajemenPelanggan:
             tanggal = datetime.datetime.now().strftime("%Y-%m-%d")
             
         dibuat_pada = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
+        
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute('''
@@ -594,7 +594,7 @@ class SistemManajemenPelanggan:
     def perbarui_transaksi_akuntansi(self, transaksi_id, jenis=None, jumlah=None, deskripsi=None, tanggal=None):
         pembaruan = []
         nilai = []
-
+        
         if jenis is not None:
             pembaruan.append("jenis = ?")
             nilai.append(jenis)
@@ -607,13 +607,13 @@ class SistemManajemenPelanggan:
         if tanggal is not None:
             pembaruan.append("tanggal = ?")
             nilai.append(tanggal)
-
+            
         if not pembaruan:
             return False
-
+            
         query = f"UPDATE akuntansi SET {', '.join(pembaruan)} WHERE id = ?"
         nilai.append(transaksi_id)
-
+        
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute(query, nilai)
@@ -681,7 +681,7 @@ class SistemManajemenPelanggan:
             tanggal = datetime.datetime.now().strftime("%Y-%m-%d")
             
         dibuat_pada = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
+        
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute('''
@@ -844,25 +844,25 @@ class SistemManajemenPelanggan:
         Jika bulan dan tahun tidak disediakan, berikan ringkasan untuk tahun ini
         """
         now = datetime.datetime.now()
-
+        
         if bulan is None:
             bulan = now.month
-
+            
         if tahun is None:
             tahun = now.year
-
+            
         # Format tanggal untuk query
         tanggal_mulai = f"{tahun}-{bulan:02d}-01"
-
+        
         # Hitung tanggal akhir (bulan + 1)
         if bulan == 12:
             tanggal_akhir = f"{tahun+1}-01-01"
         else:
             tanggal_akhir = f"{tahun}-{bulan+1:02d}-01"
-
+            
         conn = self.get_connection()
         cursor = conn.cursor()
-
+        
         # Dapatkan semua transaksi dalam rentang waktu
         cursor.execute("""
             SELECT jenis, SUM(jumlah) as total
@@ -870,22 +870,21 @@ class SistemManajemenPelanggan:
             WHERE tanggal >= ? AND tanggal < ?
             GROUP BY jenis
         """, (tanggal_mulai, tanggal_akhir))
-
+        
         result = cursor.fetchall()
-
-        # Dapatkantotal tagihan dibayar dalam bulan ini
+        
+        # Dapatkantotal tagihan dibayar dalam bulanini
         cursor.execute("""
             SELECT SUM(jumlah) as total
             FROM tagihan
-            ```python
             WHERE status_pembayaran = 'DIBAYAR'
             AND substr(dibuat_pada, 1, 7) = ?
         """, (f"{tahun}-{bulan:02d}",))
-
+        
         pendapatan_tagihan = cursor.fetchone()[0] or 0
-
+        
         conn.close()
-
+        
         # Format hasil
         ringkasan = {
             'modal_awal': 0,
@@ -894,7 +893,7 @@ class SistemManajemenPelanggan:
             'lainnya': 0,
             'pendapatan_tagihan': pendapatan_tagihan
         }
-
+        
         # Map dari jenis di database ke kunci di ringkasan
         jenis_map = {
             'MODAL_AWAL': 'modal_awal',
@@ -902,42 +901,42 @@ class SistemManajemenPelanggan:
             'PENDAPATAN': 'pendapatan',
             'LAINNYA': 'lainnya'
         }
-
+        
         for row in result:
             jenis = row[0]
             total = row[1] or 0
             if jenis in jenis_map:
                 ringkasan[jenis_map[jenis]] = total
-
+                
         # Hitung total pendapatan dari pendapatan langsung dan tagihan
         total_pendapatan = ringkasan['pendapatan'] + ringkasan['pendapatan_tagihan']
-
+        
         # Hitung laba kotor dan bersih
         laba_kotor = ringkasan['pendapatan']
         laba_bersih = ringkasan['pendapatan'] - ringkasan['pengeluaran']
-
+        
         # Tambahkan ke ringkasan
         ringkasan['pendapatan_kotor'] = total_pendapatan
         ringkasan['pendapatan_bersih'] = total_pendapatan
         ringkasan['laba_kotor'] = laba_kotor
         ringkasan['laba_bersih'] = laba_bersih
-
+        
         # Hitung CASH PERUSAHAAN (modal awal - pengeluaran + pendapatan)
         ringkasan['cash_perusahaan'] = ringkasan['modal_awal'] - ringkasan['pengeluaran'] + ringkasan['pendapatan']
-
+        
         # Tambahkan rasio keuangan
         if ringkasan['modal_awal'] > 0:
             ringkasan['rasio_pendapatan_modal'] = total_pendapatan / ringkasan['modal_awal']
         else:
             ringkasan['rasio_pendapatan_modal'] = 0
-
+            
         if total_pendapatan > 0:
             ringkasan['rasio_pengeluaran_pendapatan'] = ringkasan['pengeluaran'] / total_pendapatan
             ringkasan['margin_laba'] = laba_bersih / total_pendapatan
         else:
             ringkasan['rasio_pengeluaran_pendapatan'] = 0
             ringkasan['margin_laba'] = 0
-
+            
         return ringkasan
     
     def dapatkan_tagihan_dibayar_hari_ini(self, user_id=None):
@@ -1039,10 +1038,10 @@ class SistemManajemenPelanggan:
     def dapatkan_pengeluaran_hari_ini(self, user_id=None):
         """Dapatkan total pengeluaran hari ini"""
         tanggal_hari_ini = datetime.datetime.now().strftime("%Y-%m-%d")
-
+        
         conn = self.get_connection()
         cursor = conn.cursor()
-
+        
         if user_id is not None:
             cursor.execute("""
                 SELECT COUNT(id) as jumlah_transaksi, COALESCE(SUM(jumlah), 0) as total_jumlah
@@ -1058,23 +1057,23 @@ class SistemManajemenPelanggan:
                 WHERE date(tanggal) = ?
                 AND jenis = 'PENGELUARAN'
             """, (tanggal_hari_ini,))
-
+        
         result = cursor.fetchone()
         conn.close()
-
+        
         return {
             'jumlah': result[0],
             'total': result[1] or 0
         }
-
+        
     def dapatkan_pengeluaran_30_hari(self, user_id=None):
         """Dapatkan total pengeluaran 30 hari terakhir"""
         tiga_puluh_hari_lalu = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
         tanggal_hari_ini = datetime.datetime.now().strftime("%Y-%m-%d")
-
+        
         conn = self.get_connection()
         cursor = conn.cursor()
-
+        
         if user_id is not None:
             cursor.execute("""
                 SELECT COUNT(id) as jumlah_transaksi, COALESCE(SUM(jumlah), 0) as total_jumlah
@@ -1090,14 +1089,15 @@ class SistemManajemenPelanggan:
                 WHERE date(tanggal) BETWEEN ? AND ?
                 AND jenis = 'PENGELUARAN'
             """, (tiga_puluh_hari_lalu, tanggal_hari_ini))
-
+        
         result = cursor.fetchone()
         conn.close()
-
+        
         return {
             'jumlah': result[0],
             'total': result[1] or 0
         }
+        
 
 # Inisialisasi objek
 pengguna_manager = Pengguna()
@@ -1519,6 +1519,7 @@ def tagihan_list():
     
     
     
+    
 
 @app.route('/setoran')
 @app.route('/setoran/<status>')
@@ -1621,55 +1622,54 @@ def update_status_setoran(setoran_id, status):
 @app.route('/tagihan/tambah', methods=['GET', 'POST'])
 @login_required
 def tambah_tagihan():
-    user_id = session['user']['id']
-    is_admin = session['user']['level'] == 'admin'
-    
-    # Dapatkan daftar pelanggan untuk dropdown
-    if is_admin:
-        pelanggan_list = sistem_manajemen.dapatkan_semua_pelanggan()
-    else:
-        pelanggan_list = sistem_manajemen.dapatkan_semua_pelanggan(user_id)
-    
     if request.method == 'POST':
         pelanggan_id = request.form.get('pelanggan_id')
-        jumlah = request.form.get('jumlah')
+        jumlah = request.form.get('jumlah', '0')
         deskripsi = request.form.get('deskripsi', '')
         tanggal_jatuh_tempo = request.form.get('tanggal_jatuh_tempo')
-        
-        if not pelanggan_id or not jumlah:
-            flash('Pelanggan dan jumlah tagihan harus diisi', 'danger')
-            return render_template('tagihan_form.html', 
-                                  pelanggan_list=pelanggan_list, 
-                                  mode='tambah')
-        
+
+        # Validasi input
+        if not pelanggan_id or not jumlah or not tanggal_jatuh_tempo:
+            flash('Semua field harus diisi', 'danger')
+            return redirect(url_for('tambah_tagihan'))
+
         try:
-            jumlah_float = float(jumlah)
+            # Konversi jumlah ke float
+            jumlah_float = float(jumlah.replace(',', ''))
         except ValueError:
-            flash('Jumlah tagihan harus berupa angka', 'danger')
-            return render_template('tagihan_form.html', 
-                                  pelanggan_list=pelanggan_list, 
-                                  mode='tambah')
-        
-        # Pastikan pelanggan milik user (kecuali admin)
-        if not is_admin:
-            pelanggan = sistem_manajemen.dapatkan_pelanggan(int(pelanggan_id))
-            if not pelanggan or pelanggan[8] != user_id:
+            flash('Jumlah tagihan tidak valid', 'danger')
+            return redirect(url_for('tambah_tagihan'))
+
+        # Dapatkan data pelanggan
+        pelanggan = sistem_manajemen.dapatkan_pelanggan(int(pelanggan_id))
+        if not pelanggan:
+            flash('Pelanggan tidak ditemukan', 'danger')
+            return redirect(url_for('tambah_tagihan'))
+
+        # Pemeriksaan akses
+        if session['user']['level'] != 'admin':
+            if pelanggan[8] != session['user']['id']:  # user_id ada di index 8
                 flash('Anda tidak memiliki akses ke pelanggan ini', 'danger')
                 return redirect(url_for('tagihan_list'))
-        
-        tagihan_id = sistem_manajemen.tambahtagihan(
+
+        tagihan_id = sistem_manajemen.tambah_tagihan(
             int(pelanggan_id), jumlah_float, deskripsi, tanggal_jatuh_tempo
         )
-        
+
         if tagihan_id:
             flash('Tagihan berhasil ditambahkan', 'success')
             return redirect(url_for('tagihan_list'))
         else:
             flash('Gagal menambahkan tagihan', 'danger')
-    
-    return render_template('tagihan_form.html', 
-                          pelanggan_list=pelanggan_list, 
-                          mode='tambah')
+            return redirect(url_for('tambah_tagihan'))
+
+    # GET request - tampilkan form
+    if session['user']['level'] == 'admin':
+        pelanggan = sistem_manajemen.dapatkan_semua_pelanggan()
+    else:
+        pelanggan = sistem_manajemen.dapatkan_semua_pelanggan(session['user']['id'])
+
+    return render_template('tagihan_form.html', pelanggan=pelanggan, mode='tambah')
 
 @app.route('/tagihan/edit/<int:tagihan_id>', methods=['GET', 'POST'])
 @login_required
@@ -1683,7 +1683,7 @@ def edit_tagihan(tagihan_id):
         flash('Tagihan tidak ditemukan', 'danger')
         return redirect(url_for('tagihan_list'))
     
-    # Dapatkan pelanggan untuk pemeriksaanakses
+    # Dapatkan pelanggan untuk pemeriksaan akses
     pelanggan_id= tagihan[1]
     pelanggan = sistem_manajemen.dapatkan_pelanggan(pelanggan_id)
     
@@ -1707,20 +1707,20 @@ def edit_tagihan(tagihan_id):
         if not jumlah:
             flash('Jumlah tagihan harus diisi', 'danger')
             return render_template('tagihan_form.html', 
-                               tagihan=tagihan, 
-                               pelanggan_list=pelanggan_list, 
-                               pelanggan_terpilih=pelanggan,
-                               mode='edit')
+                                   tagihan=tagihan, 
+                                   pelanggan_list=pelanggan_list, 
+                                   pelanggan_terpilih=pelanggan,
+                                   mode='edit')
         
         try:
             jumlah_float = float(jumlah)
         except ValueError:
             flash('Jumlah tagihan harus berupa angka', 'danger')
             return render_template('tagihan_form.html', 
-                               tagihan=tagihan, 
-                               pelanggan_list=pelanggan_list, 
-                               pelanggan_terpilih=pelanggan,
-                               mode='edit')
+                                   tagihan=tagihan, 
+                                   pelanggan_list=pelanggan_list, 
+                                   pelanggan_terpilih=pelanggan,
+                                   mode='edit')
         
         berhasil = sistem_manajemen.perbarui_tagihan(
             tagihan_id, jumlah_float, deskripsi, tanggal_jatuh_tempo, status_pembayaran
@@ -1798,7 +1798,7 @@ def set_status_tagihan(tagihan_id):
     if berhasil and status == 'DIBAYAR':
         # Dapatkan informasi tagihan untuk deskripsi transaksi
         pelanggan = sistem_manajemen.dapatkan_pelanggan(pelanggan_id)
-        pelanggan_nama = pelanggan[1] if pelanggan else "Pelanggan"
+        pelanggan_nama = pelanggan[1] if pelanggan else "Pelanggan Tidak Ditemukan"
         
         # Tambahkan transaksi pendapatan ke akuntansi
         deskripsi_transaksi = f"Pembayaran tagihan dari {pelanggan_nama}"
