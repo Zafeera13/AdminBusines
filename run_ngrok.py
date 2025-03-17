@@ -46,10 +46,8 @@ def check_ngrok_token():
 def configure_ngrok_token():
     """Mengkonfigurasi token Ngrok"""
     print("\n==== Konfigurasi Token Ngrok ====")
-    token = input("Masukkan token autentikasi Ngrok Anda: ")
-    if not token:
-        print("Token tidak boleh kosong!")
-        return False
+    # Menggunakan token yang telah ditentukan
+    token = "2uOCUmQVllz0FhhDb9LpQmKzQGJ_hztH72cjssCErC5nKsDi"
     
     try:
         subprocess.run(
