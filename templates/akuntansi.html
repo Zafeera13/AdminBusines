@@ -74,6 +74,81 @@
     </div>
 </div>
 
+<!-- Setoran User -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0">Setoran User Hari Ini</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Jumlah Setoran</th>
+                                <th>Total (Rp)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if setoran_harian %}
+                                {% for setoran in setoran_harian %}
+                                <tr>
+                                    <td>{{ setoran.username }}</td>
+                                    <td class="text-center">{{ setoran.jumlah_setoran }}</td>
+                                    <td class="text-end">Rp {{ "{:,.0f}".format(setoran.total_jumlah).replace(',', '.') }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center">Belum ada setoran hari ini</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0">Total Setoran 30 Hari Terakhir</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Jumlah Setoran</th>
+                                <th>Total (Rp)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if setoran_30_hari %}
+                                {% for setoran in setoran_30_hari %}
+                                <tr>
+                                    <td>{{ setoran.username }}</td>
+                                    <td class="text-center">{{ setoran.jumlah_setoran }}</td>
+                                    <td class="text-end">Rp {{ "{:,.0f}".format(setoran.total_jumlah).replace(',', '.') }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center">Belum ada setoran dalam 30 hari terakhir</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Tabel dan Form -->
 <div class="row">
     <!-- Tabel Transaksi -->

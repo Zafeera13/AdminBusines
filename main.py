@@ -725,6 +725,71 @@ class SistemManajemenPelanggan:
         hasil = cursor.fetchall()
         conn.close()
         return hasil
+        
+    def dapatkan_setoran_harian_per_user(self, tanggal=None):
+        """Dapatkan setoran harian dikelompokkan per user"""
+        if tanggal is None:
+            tanggal = datetime.datetime.now().strftime("%Y-%m-%d")
+            
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        query = """
+        SELECT 
+            s.user_id, 
+            u.username, 
+            COUNT(s.id) as jumlah_setoran, 
+            SUM(s.jumlah) as total_jumlah, 
+            s.tanggal
+        FROM 
+            setoran s
+        JOIN 
+            pengguna u ON s.user_id = u.id
+        WHERE 
+            s.tanggal = ? AND 
+            s.status IN ('MENUNGGU', 'DITERIMA')
+        GROUP BY 
+            s.user_id, u.username, s.tanggal
+        ORDER BY 
+            total_jumlah DESC
+        """
+        
+        cursor.execute(query, (tanggal,))
+        hasil = cursor.fetchall()
+        conn.close()
+        return hasil
+        
+    def dapatkan_setoran_30_hari_per_user(self):
+        """Dapatkan total setoran 30 hari terakhir dikelompokkan per user"""
+        # Hitung tanggal 30 hari yang lalu
+        tiga_puluh_hari_lalu = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
+        
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        query = """
+        SELECT 
+            s.user_id, 
+            u.username, 
+            COUNT(s.id) as jumlah_setoran, 
+            SUM(s.jumlah) as total_jumlah
+        FROM 
+            setoran s
+        JOIN 
+            pengguna u ON s.user_id = u.id
+        WHERE 
+            s.tanggal >= ? AND 
+            s.status IN ('MENUNGGU', 'DITERIMA')
+        GROUP BY 
+            s.user_id, u.username
+        ORDER BY 
+            total_jumlah DESC
+        """
+        
+        cursor.execute(query, (tiga_puluh_hari_lalu,))
+        hasil = cursor.fetchall()
+        conn.close()
+        return hasil
     
     def hitung_total_tagihan_jatuh_tempo_hari_ini(self, user_id=None):
         """Hitung total tagihan yang jatuh tempo hari ini per user"""
@@ -1599,6 +1664,36 @@ def akuntansi():
         tanggal_akhir=tanggal_akhir
     )
     
+    # Dapatkan data setoran per user untuk hari ini
+    setoran_harian = sistem_manajemen.dapatkan_setoran_harian_per_user()
+    
+    # Dapatkan data setoran per user untuk 30 hari terakhir
+    setoran_30_hari = sistem_manajemen.dapatkan_setoran_30_hari_per_user()
+    
+    # Konversi data setoran menjadi format yang mudah digunakan di template
+    setoran_harian_list = []
+    if setoran_harian:
+        for s in setoran_harian:
+            setoran_dict = {
+                'user_id': s[0],
+                'username': s[1],
+                'jumlah_setoran': s[2],
+                'total_jumlah': s[3],
+                'tanggal': s[4]
+            }
+            setoran_harian_list.append(setoran_dict)
+    
+    setoran_30_hari_list = []
+    if setoran_30_hari:
+        for s in setoran_30_hari:
+            setoran_dict = {
+                'user_id': s[0],
+                'username': s[1],
+                'jumlah_setoran': s[2],
+                'total_jumlah': s[3]
+            }
+            setoran_30_hari_list.append(setoran_dict)
+    
     # Data untuk dropdown bulan dan tahun
     months = [
         (1, 'Januari'), (2, 'Februari'), (3, 'Maret'), 
@@ -1616,7 +1711,9 @@ def akuntansi():
         tahun_selected=tahun,
         months=months,
         years=years,
-        month_name=dict(months)[bulan]
+        month_name=dict(months)[bulan],
+        setoran_harian=setoran_harian_list,
+        setoran_30_hari=setoran_30_hari_list
     )
 
 @app.route('/akuntansi/tambah', methods=['POST'])
