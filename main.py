@@ -859,7 +859,7 @@ class SistemManajemenPelanggan:
             tanggal_akhir = f"{tahun+1}-01-01"
         else:
             tanggal_akhir = f"{tahun}-{bulan+1:02d}-01"
-            
+        
         conn = self.get_connection()
         cursor = conn.cursor()
         
@@ -876,6 +876,7 @@ class SistemManajemenPelanggan:
         # Dapatkantotal tagihan dibayar dalam bulanini
         cursor.execute("""
             SELECT SUM(jumlah) as total
+            ```python
             FROM tagihan
             WHERE status_pembayaran = 'DIBAYAR'
             AND substr(dibuat_pada, 1, 7) = ?
@@ -1520,6 +1521,7 @@ def tagihan_list():
     
     
     
+    
 
 @app.route('/setoran')
 @app.route('/setoran/<status>')
@@ -1622,6 +1624,9 @@ def update_status_setoran(setoran_id, status):
 @app.route('/tagihan/tambah', methods=['GET', 'POST'])
 @login_required
 def tambah_tagihan():
+    user_id = session['user']['id']
+    is_admin = session['user']['level'] == 'admin'
+
     if request.method == 'POST':
         pelanggan_id = request.form.get('pelanggan_id')
         jumlah = request.form.get('jumlah', '0')
@@ -1647,10 +1652,9 @@ def tambah_tagihan():
             return redirect(url_for('tambah_tagihan'))
 
         # Pemeriksaan akses
-        if session['user']['level'] != 'admin':
-            if pelanggan[8] != session['user']['id']:  # user_id ada di index 8
-                flash('Anda tidak memiliki akses ke pelanggan ini', 'danger')
-                return redirect(url_for('tagihan_list'))
+        if not is_admin and pelanggan[8] != user_id:  # user_id ada di index 8
+            flash('Anda tidak memiliki akses ke pelanggan ini', 'danger')
+            return redirect(url_for('tagihan_list'))
 
         tagihan_id = sistem_manajemen.tambah_tagihan(
             int(pelanggan_id), jumlah_float, deskripsi, tanggal_jatuh_tempo
@@ -1664,12 +1668,28 @@ def tambah_tagihan():
             return redirect(url_for('tambah_tagihan'))
 
     # GET request - tampilkan form
-    if session['user']['level'] == 'admin':
-        pelanggan = sistem_manajemen.dapatkan_semua_pelanggan()
+    if is_admin:
+        pelanggan_list = sistem_manajemen.dapatkan_semua_pelanggan()
     else:
-        pelanggan = sistem_manajemen.dapatkan_semua_pelanggan(session['user']['id'])
+        pelanggan_list = sistem_manajemen.dapatkan_semua_pelanggan(user_id)
 
-    return render_template('tagihan_form.html', pelanggan=pelanggan, mode='tambah')
+    # Format data pelanggan untuk template
+    formatted_pelanggan = []
+    if pelanggan_list:
+        for p in pelanggan_list:
+            formatted_pelanggan.append({
+                'id': p[0],
+                'nama': p[1],
+                'telepon': p[2],
+                'email': p[3],
+                'alamat': p[4],
+                'dibuat_pada': p[7],
+                'user_id': p[8]
+            })
+
+    return render_template('tagihan_form.html', 
+                         pelanggan=formatted_pelanggan,
+                         mode='tambah')
 
 @app.route('/tagihan/edit/<int:tagihan_id>', methods=['GET', 'POST'])
 @login_required
