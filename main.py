@@ -1268,6 +1268,104 @@ def tagihan_list():
         tagihan = sistem_manajemen.dapatkan_semua_tagihan(user_id)
     
     return render_template('tagihan_list.html', tagihan=tagihan)
+    
+@app.route('/setoran')
+@app.route('/setoran/<status>')
+@login_required
+def setoran_list(status='SEMUA'):
+    user_id = session['user']['id']
+    is_admin = session['user']['level'] == 'admin'
+    
+    if status not in ['MENUNGGU', 'DITERIMA', 'DITOLAK', 'SEMUA']:
+        status = 'SEMUA'
+        
+    if is_admin:
+        if status == 'SEMUA':
+            setoran = sistem_manajemen.dapatkan_semua_setoran()
+        else:
+            setoran = sistem_manajemen.dapatkan_semua_setoran(status=status)
+    else:
+        if status == 'SEMUA':
+            setoran = sistem_manajemen.dapatkan_semua_setoran(user_id=user_id)
+        else:
+            setoran = sistem_manajemen.dapatkan_semua_setoran(user_id=user_id, status=status)
+    
+    # Konversi ke daftar dictionaries untuk kemudahan penggunaan di template
+    if setoran:
+        setoran_list = []
+        for s in setoran:
+            setoran_dict = {
+                'id': s[0],
+                'user_id': s[1],
+                'jumlah': s[2],
+                'metode': s[3],
+                'nomor_referensi': s[4],
+                'status': s[5],
+                'tanggal': s[6],
+                'dibuat_pada': s[7],
+                'username': s[8] if len(s) > 8 else '',
+            }
+            setoran_list.append(setoran_dict)
+    else:
+        setoran_list = []
+    
+    return render_template('setoran_list.html', setoran_list=setoran_list, is_admin=is_admin, status=status)
+
+@app.route('/setoran/buat', methods=['GET', 'POST'])
+@login_required
+def buat_setoran():
+    user_id = session['user']['id']
+    
+    # Dapatkan total tagihan jatuh tempo hari ini
+    tagihan_hari_ini = sistem_manajemen.hitung_total_tagihan_jatuh_tempo_hari_ini(user_id)
+    
+    total_tagihan = 0
+    if tagihan_hari_ini:
+        total_tagihan = tagihan_hari_ini[0][1] if tagihan_hari_ini[0][1] else 0
+    
+    if request.method == 'POST':
+        jumlah = request.form.get('jumlah', 0, type=int)
+        metode = request.form.get('metode', 'QR_CODE')
+        nomor_referensi = request.form.get('nomor_referensi', '')
+        
+        if jumlah <= 0:
+            flash('Jumlah setoran harus lebih dari 0', 'danger')
+            return render_template('setoran_form.html', total_tagihan=total_tagihan)
+        
+        # Tambahkan setoran baru
+        setoran_id = sistem_manajemen.tambah_setoran(
+            user_id=user_id,
+            jumlah=jumlah,
+            metode=metode,
+            nomor_referensi=nomor_referensi
+        )
+        
+        if setoran_id:
+            flash('Setoran berhasil dibuat. Admin akan memverifikasi pembayaran Anda', 'success')
+            return redirect(url_for('setoran_list'))
+        else:
+            flash('Gagal membuat setoran. Silakan coba lagi', 'danger')
+    
+    return render_template('setoran_form.html', total_tagihan=total_tagihan)
+
+@app.route('/setoran/<int:setoran_id>/status/<status>', methods=['POST'])
+@admin_required
+def update_status_setoran(setoran_id, status):
+    if status not in ['MENUNGGU', 'DITERIMA', 'DITOLAK']:
+        flash('Status tidak valid', 'danger')
+        return redirect(url_for('setoran_list'))
+    
+    # Update status setoran
+    sistem_manajemen.perbarui_status_setoran(setoran_id, status)
+    
+    if status == 'DITERIMA':
+        flash('Setoran berhasil diterima', 'success')
+    elif status == 'DITOLAK':
+        flash('Setoran telah ditolak', 'warning')
+    else:
+        flash('Status setoran diubah menjadi Menunggu', 'info')
+    
+    return redirect(url_for('setoran_list'))
 
 @app.route('/tagihan/tambah', methods=['GET', 'POST'])
 @login_required
