@@ -250,6 +250,21 @@ class SistemManajemenPelanggan:
             FOREIGN KEY (created_by) REFERENCES pengguna (id)
         )
         ''')
+        
+        # Buat tabel setoran
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS setoran (
+            id INTEGER PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            jumlah REAL NOT NULL,
+            metode TEXT NOT NULL,
+            nomor_referensi TEXT,
+            status TEXT DEFAULT 'MENUNGGU',
+            tanggal TEXT NOT NULL,
+            dibuat_pada TEXT,
+            FOREIGN KEY (user_id) REFERENCES pengguna (id)
+        )
+        ''')
 
         conn.commit()
         conn.close()
@@ -640,6 +655,108 @@ class SistemManajemenPelanggan:
         conn.close()
         return results
         
+    # Fungsi Setoran
+    def tambah_setoran(self, user_id, jumlah, metode, nomor_referensi=None, tanggal=None, status="MENUNGGU"):
+        """
+        Tambahkan setoran baru
+        Metode: 'QR_CODE', 'TRANSFER_BANK'
+        Status: 'MENUNGGU', 'DITERIMA', 'DITOLAK'
+        """
+        if tanggal is None:
+            tanggal = datetime.datetime.now().strftime("%Y-%m-%d")
+            
+        dibuat_pada = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+        INSERT INTO setoran (user_id, jumlah, metode, nomor_referensi, status, tanggal, dibuat_pada)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (user_id, jumlah, metode, nomor_referensi, status, tanggal, dibuat_pada))
+        conn.commit()
+        lastrowid = cursor.lastrowid
+        conn.close()
+        return lastrowid
+    
+    def perbarui_status_setoran(self, setoran_id, status):
+        """
+        Perbarui status setoran
+        Status: 'MENUNGGU', 'DITERIMA', 'DITOLAK'
+        """
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE setoran SET status = ? WHERE id = ?", (status, setoran_id))
+        conn.commit()
+        conn.close()
+        return True
+    
+    def dapatkan_setoran(self, setoran_id):
+        """Dapatkan data setoran berdasarkan ID"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM setoran WHERE id = ?", (setoran_id,))
+        hasil = cursor.fetchone()
+        conn.close()
+        return hasil
+    
+    def dapatkan_semua_setoran(self, user_id=None, status=None):
+        """Dapatkan semua setoran dengan filter opsional"""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        query = "SELECT s.*, u.username as username FROM setoran s JOIN pengguna u ON s.user_id = u.id"
+        params = []
+        
+        where_clauses = []
+        if user_id is not None:
+            where_clauses.append("s.user_id = ?")
+            params.append(user_id)
+        
+        if status is not None:
+            where_clauses.append("s.status = ?")
+            params.append(status)
+        
+        if where_clauses:
+            query += " WHERE " + " AND ".join(where_clauses)
+        
+        query += " ORDER BY s.dibuat_pada DESC"
+        
+        cursor.execute(query, params)
+        hasil = cursor.fetchall()
+        conn.close()
+        return hasil
+    
+    def hitung_total_tagihan_jatuh_tempo_hari_ini(self, user_id=None):
+        """Hitung total tagihan yang jatuh tempo hari ini per user"""
+        tanggal_hari_ini = datetime.datetime.now().strftime("%Y-%m-%d")
+        
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        if user_id is not None:
+            # Hitung total untuk satu user
+            cursor.execute("""
+                SELECT p.user_id, SUM(t.jumlah) as total_tagihan
+                FROM tagihan t 
+                JOIN pelanggan p ON t.pelanggan_id = p.id 
+                WHERE p.user_id = ? AND t.tanggal_jatuh_tempo = ? AND t.status_pembayaran = 'BELUM DIBAYAR'
+                GROUP BY p.user_id
+            """, (user_id, tanggal_hari_ini))
+        else:
+            # Hitung total untuk semua user
+            cursor.execute("""
+                SELECT p.user_id, SUM(t.jumlah) as total_tagihan, u.username
+                FROM tagihan t 
+                JOIN pelanggan p ON t.pelanggan_id = p.id 
+                JOIN pengguna u ON p.user_id = u.id
+                WHERE t.tanggal_jatuh_tempo = ? AND t.status_pembayaran = 'BELUM DIBAYAR'
+                GROUP BY p.user_id
+            """, (tanggal_hari_ini,))
+        
+        hasil = cursor.fetchall()
+        conn.close()
+        return hasil
+
     def dapatkan_ringkasan_akuntansi(self, bulan=None, tahun=None):
         """
         Dapatkan ringkasan akuntansi untuk bulan dan tahun tertentu

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Buat Setoran - CusAkuntanID{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Buat Setoran</li>
+                </ol>
+            </nav>
+            <h1><i class="fas fa-money-bill-wave me-2"></i> Buat Setoran</h1>
+            <p class="text-muted">Lakukan setoran untuk menyelesaikan tagihan yang jatuh tempo hari ini.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Form Setoran</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('buat_setoran') }}">
+                        <div class="mb-3">
+                            <label for="jumlah" class="form-label">Jumlah Setoran (Rp)</label>
+                            <input type="number" class="form-control" id="jumlah" name="jumlah" value="{{ total_tagihan }}" required>
+                            <div class="form-text">Total tagihan jatuh tempo hari ini: Rp {{ "{:,.0f}".format(total_tagihan) }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Metode Pembayaran</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="metode" id="metode_qr" value="QR_CODE" checked>
+                                <label class="form-check-label" for="metode_qr">
+                                    QR Code
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="metode" id="metode_transfer" value="TRANSFER_BANK">
+                                <label class="form-check-label" for="metode_transfer">
+                                    Transfer Bank
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nomor_referensi" class="form-label">Nomor Referensi</label>
+                            <input type="text" class="form-control" id="nomor_referensi" name="nomor_referensi" placeholder="Masukkan nomor referensi transfer">
+                            <div class="form-text">Opsional. Isi nomor referensi transaksi untuk memudahkan verifikasi.</div>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Batal</a>
+                            <button type="submit" class="btn btn-primary">Buat Setoran</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Informasi Rekening</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <img src="{{ url_for('static', filename='images/qr_mandiri.svg') }}" alt="QR Code Bank Mandiri" class="img-fluid mb-3" style="max-width: 200px;">
+                    </div>
+                    <div class="mb-3">
+                        <h5 class="fw-bold">Bank Mandiri</h5>
+                        <p class="mb-1">Nomor Rekening: <span class="fw-bold">1820000922591</span></p>
+                        <p class="mb-1">Atas Nama: <span class="fw-bold">PRAMONO</span></p>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle me-2"></i> Setelah melakukan pembayaran, admin akan melakukan verifikasi dan memperbarui status setoran Anda.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
