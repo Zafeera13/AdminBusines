@@ -160,15 +160,7 @@
                                                         <a href="{{ url_for('edit_tagihan', tagihan_id=t[0]) }}" class="btn btn-sm btn-primary" title="Edit">
                                                             <i class="fas fa-edit"></i>
                                                         </a>
-{% if session.user.level == "admin" %}
                                                         <button type="button" class="btn btn-sm btn-danger delete-tagihan-btn" 
-                                                                data-bs-toggle="modal" 
-                                                                data-bs-target="#deleteTagihanModal" 
-                                                                data-id="{{ t[0] }}"
-                                                                title="Hapus">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                        {% endif %}
                                                                 data-bs-toggle="modal" 
                                                                 data-bs-target="#deleteTagihanModal" 
                                                                 data-id="{{ t[0] }}"
@@ -238,15 +230,7 @@
                                                         <a href="{{ url_for('edit_tagihan', tagihan_id=t[0]) }}" class="btn btn-sm btn-primary" title="Edit">
                                                             <i class="fas fa-edit"></i>
                                                         </a>
-{% if session.user.level == "admin" %}
                                                         <button type="button" class="btn btn-sm btn-danger delete-tagihan-btn" 
-                                                                data-bs-toggle="modal" 
-                                                                data-bs-target="#deleteTagihanModal" 
-                                                                data-id="{{ t[0] }}"
-                                                                title="Hapus">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                        {% endif %}
                                                                 data-bs-toggle="modal" 
                                                                 data-bs-target="#deleteTagihanModal" 
                                                                 data-id="{{ t[0] }}"
