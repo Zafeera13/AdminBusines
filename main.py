@@ -341,9 +341,22 @@ class SistemManajemenPelanggan:
             cursor = conn.cursor()
 
             if user_id is not None:
-                cursor.execute("SELECT * FROM pelanggan WHERE user_id = ? ORDER BY nama", (user_id,))
+                query = """
+                    SELECT p.*, u.username, u.nama_lengkap 
+                    FROM pelanggan p
+                    LEFT JOIN pengguna u ON p.user_id = u.id
+                    WHERE p.user_id = ? 
+                    ORDER BY p.nama
+                """
+                cursor.execute(query, (user_id,))
             else:
-                cursor.execute("SELECT * FROM pelanggan ORDER BY nama")
+                query = """
+                    SELECT p.*, u.username, u.nama_lengkap 
+                    FROM pelanggan p
+                    LEFT JOIN pengguna u ON p.user_id = u.id
+                    ORDER BY p.nama
+                """
+                cursor.execute(query)
 
             hasil = cursor.fetchall()
             return hasil

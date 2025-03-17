@@ -34,6 +34,9 @@
                                 <th>Telepon</th>
                                 <th>Email</th>
                                 <th>Alamat</th>
+                                {% if session.user.level == 'admin' %}
+                                <th>Pemilik</th>
+                                {% endif %}
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -45,6 +48,18 @@
                                 <td>{{ p[2] or '-' }}</td>
                                 <td>{{ p[3] or '-' }}</td>
                                 <td>{{ p[4] or '-' }}</td>
+                                {% if session.user.level == 'admin' %}
+                                <td>
+                                    {% if p[9] %}
+                                        <span class="badge bg-primary">{{ p[9] }}</span>
+                                        {% if p[10] %}
+                                        <small class="d-block text-muted">{{ p[10] }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-secondary">Tidak ada</span>
+                                    {% endif %}
+                                </td>
+                                {% endif %}
                                 <td>
                                     <a href="{{ url_for('detail_pelanggan', pelanggan_id=p[0]) }}" class="btn btn-sm btn-info" title="Lihat Detail">
                                         <i class="fas fa-eye"></i>
