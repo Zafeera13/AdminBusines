@@ -1856,10 +1856,28 @@ def akuntansi(tahun=None, bulan=None):
     else:
         tanggal_akhir = f"{tahun}-{bulan+1:02d}-01"
 
-    transaksi = sistem_manajemen.dapatkan_semua_transaksi_akuntansi(
+    transaksi_raw = sistem_manajemen.dapatkan_semua_transaksi_akuntansi(
         tanggal_mulai=tanggal_mulai,
         tanggal_akhir=tanggal_akhir
     )
+    
+    # Format data transaksi
+    transaksi = []
+    if transaksi_raw:
+        for tr in transaksi_raw:
+            try:
+                jumlah = float(tr[2]) if tr[2] is not None else 0
+                transaksi.append({
+                    'id': tr[0],
+                    'jenis': tr[1],
+                    'jumlah': jumlah,
+                    'deskripsi': tr[3],
+                    'tanggal': tr[4],
+                    'created_by': tr[5],
+                    'dibuat_pada': tr[6]
+                })
+            except (ValueError, TypeError, IndexError):
+                continue
 
     # Data untuk dropdown bulan dan tahun
     months = [

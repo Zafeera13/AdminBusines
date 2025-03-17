@@ -176,18 +176,18 @@
                             {% if transaksi %}
                                 {% for tr in transaksi %}
                                 <tr>
-                                    <td>{{ tr[4] }}</td>
+                                    <td>{{ tr.tanggal }}</td>
                                     <td>
                                         <span class="badge rounded-pill 
-                                            {% if tr[1] == 'MODAL_AWAL' %}bg-primary
-                                            {% elif tr[1] == 'PENGELUARAN' %}bg-danger
-                                            {% elif tr[1] == 'PENDAPATAN' %}bg-success
+                                            {% if tr.jenis == 'MODAL_AWAL' %}bg-primary
+                                            {% elif tr.jenis == 'PENGELUARAN' %}bg-danger
+                                            {% elif tr.jenis == 'PENDAPATAN' %}bg-success
                                             {% else %}bg-secondary{% endif %}">
-                                            {{ tr[1].replace('_', ' ') }}
+                                            {{ tr.jenis.replace('_', ' ') }}
                                         </span>
                                     </td>
-                                    <td>{{ tr[3] }}</td>
-                                    <td class="text-end">Rp {{ "{:,.0f}".format(float(tr[2])).replace(',', '.') }}</td>
+                                    <td>{{ tr.deskripsi }}</td>
+                                    <td class="text-end">Rp {{ "{:,.0f}".format(tr.jumlah).replace(',', '.') }}</td>
                                     <td>
                                         <button class="btn btn-sm btn-secondary me-1 edit-transaksi" 
                                                 data-id="{{ tr[0] }}"
