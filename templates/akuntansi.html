@@ -187,7 +187,7 @@
                                         </span>
                                     </td>
                                     <td>{{ tr[3] }}</td>
-                                    <td class="text-end">Rp {{ "{:,.0f}".format(tr[2]).replace(',', '.') }}</td>
+                                    <td class="text-end">Rp {{ "{:,.0f}".format(float(tr[2])).replace(',', '.') }}</td>
                                     <td>
                                         <button class="btn btn-sm btn-secondary me-1 edit-transaksi" 
                                                 data-id="{{ tr[0] }}"

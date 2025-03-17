@@ -1833,8 +1833,8 @@ def set_status_tagihan(tagihan_id):
         return jsonify({'success': False, 'message': 'Gagal memperbarui status'}), 500
 
 # Fitur Akuntansi
-@app.route('/akuntansi')
-@app.route('/akuntansi/<int:tahun>/<int:bulan>')
+@app.route('/akuntansi', methods=['GET'])
+@app.route('/akuntansi/<int:tahun>/<int:bulan>', methods=['GET'])
 @login_required
 @admin_required
 def akuntansi(tahun=None, bulan=None):
